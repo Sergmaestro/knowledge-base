@@ -1,0 +1,65 @@
+version: '3.8'
+
+services:
+  kb-database:
+    image: mysql:8.0
+    container_name: kb_database
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: knowledge_base
+      MYSQL_USER: kb_user
+      MYSQL_PASSWORD: kb_pass
+    ports:
+      - "33068:3306"
+    volumes:
+      - kb_database_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      timeout: 5s
+      retries: 10
+
+  kb-app:
+    build:
+      context: .
+      dockerfile: docker/php/Dockerfile
+    container_name: kb_app
+    ports:
+      - "8007:8000"
+    environment:
+      - APP_ENV=local
+      - DB_HOST=kb-database
+      - DB_PORT=3306
+      - DB_DATABASE=knowledge_base
+      - DB_USERNAME=kb_user
+      - DB_PASSWORD=kb_pass
+    depends_on:
+      kb-database:
+        condition: service_healthy
+    volumes:
+      - ./storage:/var/www/html/storage
+      - ./public:/var/www/html/public
+    working_dir: /var/www
+    command: >
+      sh -c "
+        php artisan migrate --force ||
+        echo 'Migration might already be done' &&
+        php artisan markdown:load ||
+        echo 'Markdown load might already be done' &&
+        php artisan serve --host=0.0.0.0 --port=8000
+      "
+
+  kb-vite:
+    image: node:20
+    container_name: kb_vite
+    command: sh -c "npm install && npm run dev -- --host"
+    working_dir: /app
+    volumes:
+      - .:/app
+    ports:
+      - "5173:5173"
+#    command: sh -c "npm install && npm run dev"
+    environment:
+      - CHOKIDAR_USEPOLLING=true
+
+volumes:
+  kb_database_data:
