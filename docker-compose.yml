@@ -41,7 +41,7 @@ services:
     working_dir: /var/www
     command: >
       sh -c "
-        php artisan migrate --force ||
+        php artisan migrate --force --no-interaction ||
         echo 'Migration might already be done' &&
         php artisan markdown:load ||
         echo 'Markdown load might already be done' &&

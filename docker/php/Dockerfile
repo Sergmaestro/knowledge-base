@@ -31,7 +31,7 @@ RUN chown -R dockeruser:dockeruser /var/www
 COPY . /var/www
 
 # Install dependencies
-RUN composer install --no-dev --optimize-autoloader
+RUN composer install --optimize-autoloader
 
 EXPOSE 8000
 
