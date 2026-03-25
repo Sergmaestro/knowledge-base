@@ -21,18 +21,16 @@ class BookmarkController extends Controller
 
         if ($bookmark) {
             $bookmark->delete();
-            $bookmarked = false;
         } else {
             Bookmark::create([
                 'user_id' => $user->id,
                 'question_id' => $questionId,
             ]);
-            $bookmarked = true;
         }
 
         return response()->json([
             'success' => true,
-            'bookmarked' => $bookmarked,
+            'bookmarked' => (bool) $bookmark,
         ]);
     }
 
@@ -40,9 +38,7 @@ class BookmarkController extends Controller
     {
         return response()->json($request->user()
             ->bookmarks()
-            ->with(['question' => function ($query) {
-                $query->select('id', 'topic_id', 'title', 'slug');
-            }])
+            ->with('question:id,topic_id,title,slug')
             ->get()
             ->pluck('question')
         );

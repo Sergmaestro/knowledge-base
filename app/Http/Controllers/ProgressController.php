@@ -16,11 +16,9 @@ class ProgressController extends Controller
             'completed' => 'required|boolean',
         ]);
 
-        $user = $request->user();
-
         $progress = UserProgress::updateOrCreate(
             [
-                'user_id' => $user->id,
+                'user_id' => $request->user()->id,
                 'question_id' => $request->question_id,
             ],
             [
@@ -51,7 +49,6 @@ class ProgressController extends Controller
                 'completed' => !$progress->completed,
                 'completed_at' => !$progress->completed ? now() : null,
             ]);
-            $completed = $progress->completed;
         } else {
             $progress = UserProgress::create([
                 'user_id' => $user->id,
@@ -59,18 +56,17 @@ class ProgressController extends Controller
                 'completed' => true,
                 'completed_at' => now(),
             ]);
-            $completed = true;
         }
 
         return response()->json([
             'success' => true,
-            'completed' => $completed,
+            'completed' => (bool) $progress,
         ]);
     }
 
     public function index(Request $request): JsonResponse
     {
-        $topicId = $request->get('topic_id');
+        $topicId = $request->topic_id;
 
         $query = $request->user()->progress()->with('question');
 

@@ -3,23 +3,29 @@
 namespace App\Http\Controllers;
 
 use App\Models\Question;
+use App\Repositories\TopicRepository;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
 class SearchController extends Controller
 {
+    public function __construct(
+        private TopicRepository $topicRepository
+    ) {}
+
     public function index(Request $request)
     {
-        $query = $request->get('q', '');
+        $query = $request->input('q', '');
 
         if (strlen($query) < 2) {
             return Inertia::render('Search', [
                 'query' => $query,
                 'results' => [],
+                'topics' => $this->topicRepository->getAllWithProgress(),
             ]);
         }
 
-        $searchTerm = '%'.$query.'%';
+        $searchTerm = "%$query%";
 
         $results = Question::select('questions.*', 'topics.name as topic_name', 'topics.slug as topic_slug')
             ->join('topics', 'questions.topic_id', 'topics.id')
@@ -45,18 +51,19 @@ class SearchController extends Controller
         return Inertia::render('Search', [
             'query' => $query,
             'results' => $results,
+            'topics' => $this->topicRepository->getAllWithProgress(),
         ]);
     }
 
     public function apiIndex(Request $request)
     {
-        $query = $request->get('q', '');
+        $query = $request->input('q', '');
 
         if (strlen($query) < 2) {
             return response()->json(['results' => []]);
         }
 
-        $searchTerm = '%'.$query.'%';
+        $searchTerm = "%$query%";
 
         $results = Question::select('questions.*', 'topics.name as topic_name', 'topics.slug as topic_slug')
             ->join('topics', 'questions.topic_id', 'topics.id')

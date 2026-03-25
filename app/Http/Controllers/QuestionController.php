@@ -3,11 +3,15 @@
 namespace App\Http\Controllers;
 
 use App\Models\Question;
-use App\Models\Topic;
+use App\Repositories\TopicRepository;
 use Inertia\Inertia;
 
 class QuestionController extends Controller
 {
+    public function __construct(
+        private TopicRepository $topicRepository
+    ) {}
+
     public function show(string $slug)
     {
         $question = Question::where('slug', $slug)
@@ -38,18 +42,6 @@ class QuestionController extends Controller
             ->orderBy('order_index', 'desc')
             ->first();
 
-        $topics = Topic::withCount('questions')
-            ->orderBy('order_index')
-            ->get()
-            ->map(function ($topic) {
-                return [
-                    'id' => $topic->id,
-                    'name' => $topic->name,
-                    'slug' => $topic->slug,
-                    'questions_count' => $topic->questions_count,
-                ];
-            });
-
         return Inertia::render('Question', [
             'question' => [
                 'id' => $question->id,
@@ -71,7 +63,7 @@ class QuestionController extends Controller
                 'slug' => $prevQuestion->slug,
                 'title' => $prevQuestion->title,
             ] : null,
-            'topics' => $topics,
+            'topics' => $this->topicRepository->getAllWithProgress(),
         ]);
     }
 }

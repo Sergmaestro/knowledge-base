@@ -3,10 +3,16 @@
 namespace App\Http\Controllers;
 
 use App\Models\Topic;
+use App\Models\UserProgress;
+use App\Repositories\TopicRepository;
 use Inertia\Inertia;
 
 class TopicController extends Controller
 {
+    public function __construct(
+        private readonly TopicRepository $topicRepository
+    ) {}
+
     public function show(string $slug)
     {
         $topic = Topic::where('slug', $slug)
@@ -15,29 +21,20 @@ class TopicController extends Controller
             }])
             ->firstOrFail();
 
-        $questions = $topic->questions->map(function ($question) {
-            $question->is_completed = false;
-            if (auth()->check()) {
-                $progress = auth()->user()->progress()
-                    ->where('question_id', $question->id)
-                    ->first();
-                $question->is_completed = $progress?->completed ?? false;
-            }
+        $progressByQuestion = [];
+        if (auth()->check()) {
+            $progressByQuestion = UserProgress::query()
+                ->where('user_id', auth()->id())
+                ->whereIn('question_id', $topic->questions->pluck('id'))
+                ->pluck('completed', 'question_id')
+                ->toArray();
+        }
+
+        $questions = $topic->questions->map(function ($question) use ($progressByQuestion) {
+            $question->is_completed = $progressByQuestion[$question->id] ?? false;
 
             return $question;
         });
-
-        $topics = Topic::withCount('questions')
-            ->orderBy('order_index')
-            ->get()
-            ->map(function ($topic) {
-                return [
-                    'id' => $topic->id,
-                    'name' => $topic->name,
-                    'slug' => $topic->slug,
-                    'questions_count' => $topic->questions_count,
-                ];
-            });
 
         return Inertia::render('Topic', [
             'topic' => [
@@ -54,7 +51,7 @@ class TopicController extends Controller
                     'total' => $questions->count(),
                 ]
                 : null,
-            'topics' => $topics,
+            'topics' => $this->topicRepository->getAllWithProgress(),
         ]);
     }
 }

@@ -86,23 +86,23 @@
             <!-- Navigation -->
             <div class="flex justify-between mt-8 pt-6 border-t">
                 <Link
-                    v-if="prevQuestion"
-                    :href="`/question/${prevQuestion.slug}`"
+                    v-if="prev_question"
+                    :href="`/question/${prev_question.slug}`"
                     class="flex items-center text-indigo-600 hover:text-indigo-700"
                 >
                     <svg class="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
                     </svg>
-                    {{ prevQuestion.title }}
+                    {{ prev_question.title }}
                 </Link>
                 <div v-else></div>
 
                 <Link
-                    v-if="nextQuestion"
-                    :href="`/question/${nextQuestion.slug}`"
+                    v-if="next_question"
+                    :href="`/question/${next_question.slug}`"
                     class="flex items-center text-indigo-600 hover:text-indigo-700"
                 >
-                    {{ nextQuestion.title }}
+                    {{ next_question.title }}
                     <svg class="w-5 h-5 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
                     </svg>
@@ -120,8 +120,8 @@ import {computed} from "vue";
 
 const props = defineProps({
     question: Object,
-    nextQuestion: Object,
-    prevQuestion: Object,
+    next_question: Object,
+    prev_question: Object,
     topics: {
         type: Array,
         default: () => [],

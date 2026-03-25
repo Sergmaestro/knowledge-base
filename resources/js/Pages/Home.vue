@@ -30,16 +30,14 @@
                     v-for="topic in topics"
                     :key="topic.slug"
                     :href="`/topic/${topic.slug}`"
-                    class="bg-white rounded-lg shadow hover:shadow-md transition p-6"
-                >
+                    class="bg-white rounded-lg shadow hover:shadow-md transition p-6">
                     <div class="flex items-center justify-between mb-4">
                         <h3 class="text-lg font-semibold text-gray-900">{{ topic.name }}</h3>
                         <span
                             v-if="topic.questions_count"
-                            class="text-sm text-gray-500"
-                        >
-              {{ topic.questions_count }} questions
-            </span>
+                            class="text-sm text-gray-500">
+                        {{ topic.questions_count }} questions
+                        </span>
                     </div>
 
                     <p v-if="topic.description" class="text-sm text-gray-600 mb-4">
@@ -51,14 +49,13 @@
                             <span class="text-gray-500">Progress</span>
                             <span class="font-medium"
                                   :class="topic.progress.completed === topic.progress.total ? 'text-green-600' : 'text-gray-900'">
-                {{ topic.progress.completed }}/{{ topic.progress.total }}
-              </span>
+                                {{ topic.progress.completed }}/{{ topic.progress.total }}
+                            </span>
                         </div>
                         <div class="w-full bg-gray-200 rounded-full h-2">
                             <div
                                 class="bg-indigo-600 h-2 rounded-full"
-                                :style="{ width: `${(topic.progress.completed / topic.progress.total) * 100}%` }"
-                            ></div>
+                                :style="{ width: `${(topic.progress.completed / topic.progress.total) * 100}%` }"></div>
                         </div>
                     </div>
                 </Link>

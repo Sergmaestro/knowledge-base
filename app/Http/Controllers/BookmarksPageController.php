@@ -2,11 +2,15 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Topic;
+use App\Repositories\TopicRepository;
 use Inertia\Inertia;
 
 class BookmarksPageController extends Controller
 {
+    public function __construct(
+        private TopicRepository $topicRepository
+    ) {}
+
     public function index()
     {
         $bookmarks = auth()->user()
@@ -18,21 +22,9 @@ class BookmarksPageController extends Controller
             ->pluck('question')
             ->filter();
 
-        $topics = Topic::withCount('questions')
-            ->orderBy('order_index')
-            ->get()
-            ->map(function ($topic) {
-                return [
-                    'id' => $topic->id,
-                    'name' => $topic->name,
-                    'slug' => $topic->slug,
-                    'questions_count' => $topic->questions_count,
-                ];
-            });
-
         return Inertia::render('Bookmarks', [
             'bookmarks' => $bookmarks,
-            'topics' => $topics,
+            'topics' => $this->topicRepository->getAllWithProgress(),
         ]);
     }
 }
