@@ -10,7 +10,18 @@
                         </Link>
                     </div>
 
-                    <div class="flex items-center space-x-4">
+                    <div class="flex items-center space-x-2 lg:space-x-4">
+                        <!-- Mobile Menu Button -->
+                        <button
+                            @click="showMobileMenu = !showMobileMenu"
+                            class="lg:hidden p-2 text-gray-600 hover:text-gray-900"
+                        >
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                      d="M4 6h16M4 12h16M4 18h16"/>
+                            </svg>
+                        </button>
+
                         <!-- Search Button -->
                         <button
                             @click="showSearch = true"
@@ -23,27 +34,113 @@
                             Search...
                         </button>
 
-                        <!-- Auth Links -->
+                        <!-- Auth Links (desktop) -->
                         <template v-if="$page.props.auth?.user">
-                            <Link href="/bookmarks" class="text-sm text-gray-600 hover:text-gray-900">
+                            <Link href="/bookmarks" class="hidden lg:inline-block text-sm text-gray-600 hover:text-gray-900">
                                 Bookmarks
                             </Link>
-                            <Link :href="route('profile.edit')" class="text-sm text-gray-600 hover:text-gray-900">
+                            <Link :href="route('profile.edit')" class="hidden lg:inline-block text-sm text-gray-600 hover:text-gray-900">
                                 {{ $page.props.auth.user.name }}
                             </Link>
                             <Link href="/logout" method="post" as="button"
-                                  class="text-sm text-red-600 hover:text-red-700">
+                                  class="hidden lg:inline-block text-sm text-red-600 hover:text-red-700">
                                 Log out
                             </Link>
                         </template>
                         <template v-else>
-                            <Link href="/login" class="text-sm text-gray-600 hover:text-gray-900">Log in</Link>
-                            <Link href="/register" class="text-sm text-gray-600 hover:text-gray-900">Register</Link>
+                            <Link href="/login" class="hidden lg:inline-block text-sm text-gray-600 hover:text-gray-900">Log in</Link>
+                            <Link href="/register" class="hidden lg:inline-block text-sm text-gray-600 hover:text-gray-900">Register</Link>
                         </template>
                     </div>
                 </div>
             </div>
         </header>
+
+        <!-- Mobile Menu -->
+        <div
+            v-if="showMobileMenu"
+            class="fixed inset-0 z-50 lg:hidden"
+        >
+            <div class="fixed inset-0 bg-gray-600 bg-opacity-75" @click="showMobileMenu = false"></div>
+            <div class="fixed inset-y-0 left-0 w-72 bg-white shadow-xl">
+                <div class="p-4 border-b flex items-center justify-between">
+                    <span class="font-semibold text-gray-900">Topics</span>
+                    <button @click="showMobileMenu = false" class="p-1 text-gray-500 hover:text-gray-700">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                        </svg>
+                    </button>
+                </div>
+                <nav class="p-4 space-y-1 overflow-y-auto h-full pb-20">
+                    <Link
+                        v-for="topic in topics"
+                        :key="topic.slug"
+                        :href="`/topic/${topic.slug}`"
+                        class="flex items-center justify-between px-3 py-2 text-sm font-medium rounded-md transition"
+                        :class="[
+                            isActive(topic.slug)
+                                ? 'bg-indigo-100 text-indigo-700'
+                                : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+                        ]"
+                        @click="showMobileMenu = false"
+                    >
+                        <span>{{ topic.name }}</span>
+                        <span
+                            v-if="topic.progress"
+                            class="text-xs px-2 py-0.5 rounded-full"
+                            :class="topic.progress.completed === topic.progress.total ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'"
+                        >
+                            {{ topic.progress.completed }}/{{ topic.progress.total }}
+                        </span>
+                    </Link>
+
+                    <!-- Mobile Auth Links -->
+                    <div class="border-t pt-4 mt-4">
+                        <template v-if="$page.props.auth?.user">
+                            <Link
+                                href="/bookmarks"
+                                class="flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-600 hover:bg-gray-100 hover:text-gray-900"
+                                @click="showMobileMenu = false"
+                            >
+                                Bookmarks
+                            </Link>
+                            <Link
+                                :href="route('profile.edit')"
+                                class="flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-600 hover:bg-gray-100 hover:text-gray-900"
+                                @click="showMobileMenu = false"
+                            >
+                                {{ $page.props.auth.user.name }}
+                            </Link>
+                            <Link
+                                href="/logout"
+                                method="post"
+                                as="button"
+                                class="flex items-center w-full px-3 py-2 text-sm font-medium rounded-md text-red-600 hover:bg-red-50"
+                                @click="showMobileMenu = false"
+                            >
+                                Log out
+                            </Link>
+                        </template>
+                        <template v-else>
+                            <Link
+                                href="/login"
+                                class="flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-600 hover:bg-gray-100 hover:text-gray-900"
+                                @click="showMobileMenu = false"
+                            >
+                                Log in
+                            </Link>
+                            <Link
+                                href="/register"
+                                class="flex items-center px-3 py-2 text-sm font-medium rounded-md text-gray-600 hover:bg-gray-100 hover:text-gray-900"
+                                @click="showMobileMenu = false"
+                            >
+                                Register
+                            </Link>
+                        </template>
+                    </div>
+                </nav>
+            </div>
+        </div>
 
         <!-- Main Content -->
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
@@ -120,9 +217,14 @@ const props = defineProps({
 })
 
 const showSearch = ref(false)
+const showMobileMenu = ref(false)
 const searchQuery = ref('')
 const searchResults = ref([])
 const searchInput = ref(null)
+
+const isActive = (slug) => {
+    return window.location.pathname.startsWith(`/topic/${slug}`)
+}
 
 function debounce(fn, delay) {
     let timeoutId

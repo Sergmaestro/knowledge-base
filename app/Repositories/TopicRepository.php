@@ -34,7 +34,7 @@ class TopicRepository
                 'name' => $topic->name,
                 'slug' => $topic->slug,
                 'questions_count' => $topic->questions_count,
-                'progress' => $topic->questions_count > 0 ? [
+                'progress' => $topic->questions_count > 0 && $progressByTopic ? [
                     'completed' => $progressByTopic[$topic->id] ?? 0,
                     'total' => $topic->questions_count,
                 ] : null,
