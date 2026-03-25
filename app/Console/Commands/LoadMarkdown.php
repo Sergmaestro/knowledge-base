@@ -36,7 +36,7 @@ class LoadMarkdown extends Command
         $topicCount = Topic::count();
         $questionCount = Question::count();
 
-        $this->info("Loaded {$topicCount} topics and {$questionCount} questions.");
+        $this->info("Loaded $topicCount topics and $questionCount questions.");
 
         return Command::SUCCESS;
     }

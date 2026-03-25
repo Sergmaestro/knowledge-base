@@ -82,7 +82,11 @@ class MarkdownLoader
 
             $lines = explode("\n", $part);
             $titleLine = array_shift($lines);
-            $title = trim(str_replace('## Question ', '', str_replace(':**', '', $titleLine)));
+            $title = trim(
+                preg_replace('/## Question \d+:/', '',
+                    str_replace(':**', '', $titleLine)
+                )
+            );
 
             $contentStart = false;
             $questionContent = [];
