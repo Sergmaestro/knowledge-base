@@ -35,18 +35,25 @@ open http://localhost:8007
 ```
 knowledge-base/
 ├── app/
-│   ├── Console/Commands/     # Artisan commands
-│   ├── Http/Controllers/    # API controllers
-│   ├── Models/              # Eloquent models
-│   └── Services/            # Business logic
+│   ├── Console/Commands/      # Artisan commands
+│   ├── Http/
+│   │   ├── Controllers/        # API controllers
+│   │   ├── Middleware/         # Custom middleware
+│   │   └── Requests/          # Form requests
+│   ├── Models/                # Eloquent models
+│   ├── Policies/              # Authorization policies
+│   ├── Providers/             # Service providers
+│   ├── Repositories/          # Data access layer
+│   └── Services/              # Business logic
 ├── resources/
-│   ├── js/                  # Vue components
-│   │   ├── Pages/            # Inertia pages
-│   │   └── Layouts/         # App layouts
-│   └── markdown/            # Question content (md files)
+│   ├── js/
+│   │   ├── Components/         # Vue components
+│   │   ├── Layouts/           # App layouts
+│   │   └── Pages/             # Inertia pages
+│   └── markdown/              # Question content (md files)
 ├── database/
-│   └── migrations/          # Database migrations
-└── docker-compose.yml       # Docker services
+│   └── migrations/            # Database migrations
+└── docker-compose.yml          # Docker services
 ```
 
 ## Managing Content
@@ -82,10 +89,25 @@ Each question should follow this format:
 
 Your answer content here...
 
+### Sub-sections as needed
+
+**Follow-up:**
+- Related questions to know
+
+**Key Points:**
+- Summary of critical takeaways
+
 ---
 
 ## Question 2: Next Question
 ```
+
+### Adding New Questions
+
+1. **Analyze** - Determine the appropriate category (PHP, Laravel, Vue, Database, System-Design, etc.)
+2. **Search** - Check existing files for related content before creating new files
+3. **Follow format** - Use the structure shown above
+4. **Run reload** - Execute `php artisan markdown:load` after adding content
 
 ## Database
 

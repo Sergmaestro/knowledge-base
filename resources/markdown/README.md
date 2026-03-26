@@ -48,6 +48,60 @@ A comprehensive Q&A knowledge base for Senior Software Engineer interviews focus
 
 ---
 
+## 🔍 How to Use This Knowledge Base
+
+### For Interview Preparation
+
+1. **Browse by Topic** - Navigate through the sections above based on your target role
+2. **Use Search** - The built-in search feature (`/api/search`) helps find specific questions
+3. **Track Progress** - Mark questions as "learned" to track your preparation
+4. **Add Notes** - Use the note feature to add your own insights to any answer
+
+### Adding New Questions
+
+To add a new question/answer to the knowledge base:
+
+1. Analyze your question to determine the appropriate category
+2. Follow the existing answer structure in that file
+3. Include:
+   - Clear question title
+   - Detailed answer with code examples where applicable
+   - Follow-up questions for deeper understanding
+   - Key points summary
+4. Update the README if adding a new category
+
+### Example: Adding a New Question
+
+When adding a question like *"How do I guarantee each microservice updates its database when an action affects multiple microservices?"*:
+
+1. First, check existing files for related content:
+   ```
+   resources/markdown/System-Design/architecture.md
+   resources/markdown/Database/advanced.md
+   ```
+
+2. If a relevant section exists, add the question there following the format:
+   ```markdown
+   ## Question N: [Question Title]
+
+   **Answer:**
+
+   [Detailed explanation with code examples]
+
+   ### Sub-sections as needed
+   [More details]
+
+   **Follow-up:**
+   - [Related questions to know]
+
+   **Key Points:**
+   - [Summary of critical takeaways]
+   ```
+
+3. If creating a new topic, add it to the README table of contents
+
+---
+
 ## 🎯 Quick Navigation by Role Level
 
 ### Junior Developer (0-2 years)
