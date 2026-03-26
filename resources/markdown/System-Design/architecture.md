@@ -712,6 +712,215 @@ User::chunk(100, function ($users) {
 
 ---
 
+## Question 7: How do you guarantee each microservice updates its database when an action affects multiple microservices?
+
+**Answer:**
+
+When an action requires updating multiple microservices, you can't use traditional database transactions because each microservice has its own database. Instead, you use patterns for distributed transactions.
+
+### 1. Saga Pattern
+
+The Saga pattern breaks a distributed transaction into a series of local transactions. Each service performs its local transaction and publishes an event that triggers the next service. If one step fails, compensating transactions undo the previous steps.
+
+```
+Order Service:
+1. Create order (pending) → Publish "OrderCreated"
+     ↓
+Payment Service:
+2. Process payment → Publish "PaymentProcessed"
+     ↓
+Inventory Service:
+3. Reserve items → Publish "ItemsReserved"
+     ↓
+Order Service:
+4. Confirm order → Complete
+```
+
+### 2. Choreography vs Orchestration
+
+#### Choreography (Decentralized)
+```php
+// Each service listens to events and reacts
+
+// OrderService
+event(new OrderCreated($order));
+
+// PaymentService - listens to OrderCreated
+public function handle(OrderCreated $event): void
+{
+    $payment = $this->processPayment($event->order);
+    event(new PaymentProcessed($payment));
+}
+
+// InventoryService - listens to PaymentProcessed
+public function handle(PaymentProcessed $event): void
+{
+    $this->reserveItems($event->payment->order);
+    event(new ItemsReserved($event->payment->order));
+}
+```
+
+#### Orchestration (Centralized)
+```php
+// OrderCoordinator orchestrates the entire flow
+
+class OrderCoordinator
+{
+    public function execute(CreateOrder $command): void
+    {
+        try {
+            // Step 1: Create order
+            $order = $this->orderService->create($command->data);
+            
+            // Step 2: Process payment
+            $payment = $this->paymentService->process($order);
+            
+            // Step 3: Reserve inventory
+            $this->inventoryService->reserve($order);
+            
+            // Step 4: Confirm order
+            $this->orderService->confirm($order);
+        } catch (PaymentFailed $e) {
+            // Compensate: Cancel order
+            $this->orderService->cancel($order);
+            throw $e;
+        } catch (InventoryUnavailable $e) {
+            // Compensate: Refund payment
+            $this->paymentService->refund($payment);
+            $this->orderService->cancel($order);
+            throw $e;
+        }
+    }
+}
+```
+
+### 3. Compensation Strategies
+
+```php
+class PaymentService
+{
+    public function refund(Payment $payment): void
+    {
+        // Reverse the payment
+        $this->paymentGateway->refund($payment->transactionId);
+        $payment->update(['status' => 'refunded']);
+    }
+}
+
+class InventoryService
+{
+    public function release(Reservation $reservation): void
+    {
+        // Release reserved items
+        foreach ($reservation->items as $item) {
+            $item->increment('reserved_quantity', $reservation->quantity);
+        }
+        $reservation->delete();
+    }
+}
+```
+
+### 4. Outbox Pattern (Reliable Events)
+
+To ensure events are published reliably, use the outbox pattern:
+
+```php
+// Instead of directly publishing events, write to an outbox table
+
+class OrderService
+{
+    public function createOrder(array $data): Order
+    {
+        return DB::transaction(function () use ($data) {
+            $order = Order::create($data);
+            
+            // Write to outbox (same transaction)
+            Outbox::create([
+                'type' => 'OrderCreated',
+                'payload' => json_encode(['order_id' => $order->id]),
+            ]);
+            
+            return $order;
+        });
+    }
+}
+
+// Background job processes outbox
+class ProcessOutbox
+{
+    public function handle(): void
+    {
+        foreach (Outbox::pending()->get() as $event) {
+            try {
+                $this->eventBus->publish($event->type, $event->payload);
+                $event->markAsProcessed();
+            } catch (Exception $e) {
+                // Will retry later
+            }
+        }
+    }
+}
+```
+
+### 5. Idempotency
+
+Always design for idempotency to handle duplicate messages:
+
+```php
+class PaymentService
+{
+    public function processPayment(array $data): Payment
+    {
+        // Check if already processed (idempotency key)
+        $existing = Payment::where('idempotency_key', $data['idempotency_key'])->first();
+        
+        if ($existing) {
+            return $existing;
+        }
+        
+        return Payment::create($data);
+    }
+}
+```
+
+### 6. Distributed Tracing
+
+Use correlation IDs to track requests across services:
+
+```php
+class OrderController
+{
+    public function store(Request $request): Response
+    {
+        // Generate or extract correlation ID
+        $correlationId = $request->header('X-Correlation-ID') ?? Str::uuid()->toString();
+        
+        // Pass to all downstream services
+        Http::withHeaders([
+            'X-Correlation-ID' => $correlationId,
+        ])->post('payment-service/api/pay', $data);
+        
+        return response()->json(['correlation_id' => $correlationId]);
+    }
+}
+```
+
+**Follow-up:**
+- When would you choose choreography vs orchestration?
+- How do you handle eventual consistency?
+- What happens if a compensating transaction fails?
+
+**Key Points:**
+- Saga pattern for distributed transactions
+- Choreography (event-driven) vs Orchestration (centralized)
+- Compensation/rollback for failures
+- Outbox pattern for reliable events
+- Idempotency for message handling
+- Correlation IDs for tracing
+- Accept eventual consistency
+
+---
+
 ## Notes
 
 Add more questions covering:
