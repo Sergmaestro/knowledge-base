@@ -3,6 +3,7 @@
 use App\Http\Controllers\BookmarkController;
 use App\Http\Controllers\BookmarksPageController;
 use App\Http\Controllers\HomeController;
+use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ProgressController;
 use App\Http\Controllers\QuestionController;
 use App\Http\Controllers\SearchController;
@@ -16,8 +17,9 @@ Route::get('/search', [SearchController::class, 'index'])->name('search');
 Route::get('/api/search', [SearchController::class, 'apiIndex'])->name('search.api');
 
 Route::middleware('auth')->group(function () {
-    Route::get('/dashboard', [HomeController::class, 'index'])->name('dashboard');
-    Route::get('/profile', [HomeController::class, 'index'])->name('profile.edit');
+    Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
+    Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
+    Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
     Route::get('/bookmarks', [BookmarksPageController::class, 'index'])->name('bookmarks');
     Route::post('/progress/toggle', [ProgressController::class, 'toggle'])->name('progress.toggle');
     Route::get('/progress', [ProgressController::class, 'index'])->name('progress.index');

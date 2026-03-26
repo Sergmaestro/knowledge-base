@@ -145,6 +145,8 @@ const toggleBookmark = () => {
 }
 
 const goBack = () => {
+    console.log('document.referer', document.referrer);
+    console.log('window.location.host', window.location.host);
     if (document.referrer && document.referrer.includes(window.location.host)) {
         router.visit(document.referrer)
     } else {

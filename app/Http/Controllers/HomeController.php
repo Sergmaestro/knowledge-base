@@ -8,7 +8,7 @@ use Inertia\Inertia;
 class HomeController extends Controller
 {
     public function __construct(
-        private TopicRepository $topicRepository
+        private readonly TopicRepository $topicRepository
     ) {}
 
     public function index()

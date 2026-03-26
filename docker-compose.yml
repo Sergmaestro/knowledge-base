@@ -12,8 +12,8 @@ services:
     volumes:
       - kb_database_data:/var/lib/mysql
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
-      timeout: 5s
+      test: [ "CMD", "mysqladmin", "ping", "-h", "localhost" ]
+      timeout: 3s
       retries: 10
 
   kb-app:
@@ -24,7 +24,6 @@ services:
     ports:
       - "8007:8000"
     environment:
-      - APP_ENV=local
       - DB_HOST=kb-database
       - DB_PORT=3306
       - DB_DATABASE=knowledge_base
@@ -35,13 +34,12 @@ services:
         condition: service_healthy
     volumes:
       - ./:/var/www/
-    command: >
-      sh -c "
-        php artisan migrate --force --no-interaction ||
-        echo 'Migration might already be done' &&
-        php artisan markdown:load ||
-        echo 'Markdown load might already be done' &&
-        php artisan serve --host=0.0.0.0 --port=8000
+    command: sh -c "
+      php artisan migrate --force --no-interaction ||
+      echo 'Migration might already be done' &&
+      php artisan markdown:load ||
+      echo 'Markdown load might already be done' &&
+      php artisan serve --host=0.0.0.0 --port=8000
       "
 
   kb-vite:

@@ -36,11 +36,12 @@ class BookmarkController extends Controller
 
     public function index(Request $request): JsonResponse
     {
-        return response()->json($request->user()
-            ->bookmarks()
-            ->with('question:id,topic_id,title,slug')
-            ->get()
-            ->pluck('question')
+        return response()->json(
+            $request->user()
+                ->bookmarks()
+                ->with('question:id,topic_id,title,slug')
+                ->get()
+                ->pluck('question')
         );
     }
 }

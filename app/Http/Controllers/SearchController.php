@@ -9,52 +9,6 @@ use Inertia\Inertia;
 
 class SearchController extends Controller
 {
-    public function __construct(
-        private TopicRepository $topicRepository
-    ) {}
-
-    public function index(Request $request)
-    {
-        $query = $request->input('q', '');
-
-        if (strlen($query) < 2) {
-            return Inertia::render('Search', [
-                'query' => $query,
-                'results' => [],
-                'topics' => $this->topicRepository->getAllWithProgress(),
-            ]);
-        }
-
-        $searchTerm = "%$query%";
-
-        $results = Question::select('questions.*', 'topics.name as topic_name', 'topics.slug as topic_slug')
-            ->join('topics', 'questions.topic_id', 'topics.id')
-            ->where(function ($q) use ($searchTerm) {
-                $q->where('questions.title', 'LIKE', $searchTerm)
-                    ->orWhere('questions.content', 'LIKE', $searchTerm);
-            })
-            ->limit(50)
-            ->get()
-            ->map(function ($question) {
-                return [
-                    'id' => $question->id,
-                    'title' => $question->title,
-                    'slug' => $question->slug,
-                    'topic' => [
-                        'name' => $question->topic_name,
-                        'slug' => $question->topic_slug,
-                    ],
-                    'excerpt' => $this->getExcerpt($question->content, 200),
-                ];
-            });
-
-        return Inertia::render('Search', [
-            'query' => $query,
-            'results' => $results,
-            'topics' => $this->topicRepository->getAllWithProgress(),
-        ]);
-    }
-
     public function apiIndex(Request $request)
     {
         $query = $request->input('q', '');
@@ -68,8 +22,8 @@ class SearchController extends Controller
         $results = Question::select('questions.*', 'topics.name as topic_name', 'topics.slug as topic_slug')
             ->join('topics', 'questions.topic_id', 'topics.id')
             ->where(function ($q) use ($searchTerm) {
-                $q->where('questions.title', 'LIKE', $searchTerm)
-                    ->orWhere('questions.content', 'LIKE', $searchTerm);
+                $q->whereLike('questions.title', $searchTerm)
+                    ->orWhereLike('questions.content', $searchTerm);
             })
             ->limit(50)
             ->get()
