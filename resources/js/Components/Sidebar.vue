@@ -31,9 +31,13 @@ const props = defineProps({
         type: Array,
         default: () => [],
     },
+    currentSlug: {
+        type: String,
+        default: null,
+    },
 })
 
 const isActive = (slug) => {
-    return window.location.pathname.startsWith(`/topic/${slug}`)
+    return slug === props.currentSlug || window.location.pathname.startsWith(`/topic/${slug}`)
 }
 </script>

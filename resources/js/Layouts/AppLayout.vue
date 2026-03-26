@@ -146,7 +146,7 @@
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
             <div class="flex gap-6">
                 <!-- Sidebar -->
-                <Sidebar :topics="topics"/>
+                <Sidebar :topics="topics" :current-slug="currentTopicSlug"/>
 
                 <!-- Main Content Area -->
                 <main class="flex-1 min-w-0">
@@ -216,6 +216,10 @@ const props = defineProps({
     topics: {
         type: Array,
         default: () => [],
+    },
+    currentTopicSlug: {
+        type: String,
+        default: null,
     },
 })
 

@@ -17,14 +17,13 @@
                         <span class="text-gray-600">Progress</span>
                         <span class="font-medium"
                               :class="progress.completed === progress.total ? 'text-green-600' : 'text-gray-900'">
-              {{ progress.completed }} / {{ progress.total }} completed
-            </span>
+                            {{ progress.completed }} / {{ progress.total }} completed
+                        </span>
                     </div>
                     <div class="w-full bg-gray-200 rounded-full h-3">
                         <div
                             class="bg-indigo-600 h-3 rounded-full transition-all duration-500"
-                            :style="{ width: `${(progress.completed / progress.total) * 100}%` }"
-                        ></div>
+                            :style="{ width: `${(progress.completed / progress.total) * 100}%` }"></div>
                     </div>
                 </div>
             </div>

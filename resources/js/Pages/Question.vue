@@ -1,6 +1,6 @@
 <template>
     <Head :title="question.title"/>
-    <Layout :topics="topics">
+    <Layout :topics="topics" :current-topic-slug="question.topic?.slug">
         <div class="max-w-4xl">
             <!-- Breadcrumb -->
             <nav class="flex items-center text-sm text-gray-500 mb-6">
@@ -306,42 +306,3 @@ const goBack = () => {
     }
 }
 </script>
-
-<style>
-.prose pre {
-    background-color: #1f2937;
-    color: #e5e7eb;
-    padding: 1rem;
-    border-radius: 0.5rem;
-    overflow-x: auto;
-}
-
-.prose code {
-    background-color: #f3f4f6;
-    padding: 0.125rem 0.25rem;
-    border-radius: 0.25rem;
-    font-size: 0.875em;
-}
-
-.prose pre code {
-    background-color: transparent;
-    padding: 0;
-}
-
-.prose table {
-    width: 100%;
-    border-collapse: collapse;
-}
-
-.prose th,
-.prose td {
-    border: 1px solid #e5e7eb;
-    padding: 0.5rem 1rem;
-    text-align: left;
-}
-
-.prose th {
-    background-color: #f9fafb;
-    font-weight: 600;
-}
-</style>
