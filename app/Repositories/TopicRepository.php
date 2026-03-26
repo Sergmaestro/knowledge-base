@@ -85,4 +85,14 @@ class TopicRepository
             'total' => $total,
         ];
     }
+
+    public function upsert(array $data): void
+    {
+        Topic::upsert($data, ['slug'], ['name', 'description', 'icon', 'order_index', 'updated_at']);
+    }
+
+    public function getIdBySlug(array $slugs): array
+    {
+        return Topic::whereIn('slug', $slugs)->pluck('id', 'slug')->toArray();
+    }
 }

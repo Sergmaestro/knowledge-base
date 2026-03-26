@@ -81,4 +81,9 @@ class QuestionRepository
             'notes' => $userData['notes'],
         ];
     }
+
+    public function upsert(array $data): void
+    {
+        Question::upsert($data, ['slug'], ['topic_id', 'title', 'content', 'order_index', 'updated_at']);
+    }
 }

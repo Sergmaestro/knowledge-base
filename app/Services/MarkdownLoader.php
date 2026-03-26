@@ -2,26 +2,74 @@
 
 namespace App\Services;
 
-use App\Models\Question;
-use App\Models\Topic;
+use App\Repositories\QuestionRepository;
+use App\Repositories\TopicRepository;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 
 class MarkdownLoader
 {
+    private const array ANSWER_HEADINGS = [
+        '**Answer:**',
+        '**Answer:',
+        '**Example Answer:**',
+        '**Example Answer (STAR):**',
+        '**Example Answer',
+    ];
+
+    private const array TOPIC_CONFIG = [
+        'PHP' => ['description' => 'PHP fundamentals, advanced topics, and best practices', 'icon' => 'code-bracket'],
+        'Laravel' => ['description' => 'Laravel framework, Eloquent, architecture, and testing', 'icon' => 'cube'],
+        'Vue' => ['description' => 'Vue.js fundamentals, composition API, and state management', 'icon' => 'eye'],
+        'Database' => ['description' => 'Database design, optimization, and advanced queries', 'icon' => 'server'],
+        'System-Design' => ['description' => 'System architecture, design patterns, and scalability', 'icon' => 'cube-transparent'],
+        'DevOps' => ['description' => 'DevOps practices, monitoring, and infrastructure', 'icon' => 'cloud'],
+        'Behavioral' => ['description' => 'Behavioral interview questions and STAR method examples', 'icon' => 'chat-bubble-left-right'],
+    ];
+
+    private const array DEFAULT_TOPIC_CONFIG = ['description' => '', 'icon' => 'folder'];
+
     private string $markdownPath;
 
-    public function __construct()
+    public function __construct(
+        private readonly TopicRepository    $topicRepository,
+        private readonly QuestionRepository $questionRepository
+    )
     {
         $this->markdownPath = resource_path('markdown');
     }
 
-    public function loadMarkdownDirectory(): void
+    public function loadMarkdownDirectory(): array
     {
-        if (! File::exists($this->markdownPath)) {
-            return;
+        $stats = ['topics' => 0, 'questions' => 0];
+
+        if (!File::exists($this->markdownPath)) {
+            Log::warning('Markdown directory not found', ['path' => $this->markdownPath]);
+            return $stats;
         }
 
+        $topicData = $this->collectTopicData();
+        $questionData = $this->collectQuestionData($topicData);
+
+        if (empty($topicData)) {
+            return $stats;
+        }
+
+        $this->topicRepository->upsert($topicData);
+        $this->persistQuestions($questionData);
+
+        $stats['topics'] = count($topicData);
+        $stats['questions'] = count($questionData);
+
+        Log::info('Markdown loaded successfully', $stats);
+
+        return $stats;
+    }
+
+    private function collectTopicData(): array
+    {
+        $topicData = [];
         $directories = File::directories($this->markdownPath);
         $orderIndex = 0;
 
@@ -29,45 +77,77 @@ class MarkdownLoader
             $topicName = basename($directory);
             $topicSlug = Str::slug($topicName);
 
-            $topic = Topic::firstOrCreate(
-                ['slug' => $topicSlug],
-                [
-                    'name' => $topicName,
-                    'description' => $this->getTopicDescription($topicName),
-                    'icon' => $this->getTopicIcon($topicName),
-                    'order_index' => $orderIndex++,
-                ]
-            );
+            $config = self::TOPIC_CONFIG[$topicName] ?? self::DEFAULT_TOPIC_CONFIG;
 
-            $this->loadQuestionsFromTopic($topic, $directory);
+            $topicData[] = [
+                'slug' => $topicSlug,
+                'name' => $topicName,
+                'description' => $config['description'],
+                'icon' => $config['icon'],
+                'order_index' => $orderIndex++,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ];
         }
+
+        return $topicData;
     }
 
-    private function loadQuestionsFromTopic(Topic $topic, string $directory): void
+    private function collectQuestionData(array $topicData): array
     {
-        $files = File::files($directory);
-        $orderIndex = 0;
+        $questionData = [];
+        $directories = File::directories($this->markdownPath);
+        $topicSlugs = array_column($topicData, 'slug');
+        $topicMap = array_flip($topicSlugs);
 
-        foreach ($files as $file) {
-            if ($file->getExtension() !== 'md') {
-                continue;
-            }
+        foreach ($directories as $directory) {
+            $topicSlug = Str::slug(basename($directory));
 
-            $content = File::get($file->getPathname());
-            $questions = $this->parseQuestions($content);
+            $files = File::files($directory);
+            $orderIndex = 0;
 
-            foreach ($questions as $questionData) {
-                Question::updateOrCreate(
-                    ['slug' => $questionData['slug']],
-                    [
-                        'topic_id' => $topic->id,
-                        'title' => $questionData['title'],
-                        'content' => $questionData['content'],
+            foreach ($files as $file) {
+                if ($file->getExtension() !== 'md') {
+                    continue;
+                }
+
+                $content = File::get($file->getPathname());
+                $parsedQuestions = $this->parseQuestions($content);
+
+                foreach ($parsedQuestions as $question) {
+                    $questionData[] = [
+                        'topic_id' => $topicMap[$topicSlug] ?? null,
+                        '_topic_slug' => $topicSlug,
+                        'slug' => $question['slug'],
+                        'title' => $question['title'],
+                        'content' => $question['content'],
                         'order_index' => $orderIndex++,
-                    ]
-                );
+                        'created_at' => now(),
+                        'updated_at' => now(),
+                    ];
+                }
             }
         }
+
+        return $questionData;
+    }
+
+    private function persistQuestions(array $questionData): void
+    {
+        if (empty($questionData)) {
+            return;
+        }
+
+        $topicSlugs = array_unique(array_column($questionData, '_topic_slug'));
+        $topicIdMap = $this->topicRepository->getIdBySlug($topicSlugs);
+
+        foreach ($questionData as &$question) {
+            $question['topic_id'] = $topicIdMap[$question['_topic_slug']] ?? 0;
+            unset($question['_topic_slug']);
+        }
+        unset($question);
+
+        $this->questionRepository->upsert($questionData);
     }
 
     private function parseQuestions(string $content): array
@@ -76,82 +156,60 @@ class MarkdownLoader
         $parts = preg_split('/(?=^## Question \d+:)/m', $content);
 
         foreach ($parts as $part) {
-            if (trim($part) === '' || ! preg_match('/^## Question \d+:/m', $part)) {
+            if (trim($part) === '' || !preg_match('/^## Question \d+:/m', $part)) {
                 continue;
             }
 
             $lines = explode("\n", $part);
-            $titleLine = array_shift($lines);
-            $title = trim(
-                preg_replace('/## Question \d+:/', '',
-                    str_replace(':**', '', $titleLine)
-                )
-            );
+            $title = $this->extractTitle($lines);
 
-            $contentStart = false;
-            $questionContent = [];
-            $foundAnswerMarker = false;
-
-            foreach ($lines as $line) {
-                if (preg_match('/^## Question \d+:/', $line)) {
-                    continue;
-                }
-
-                if (! $foundAnswerMarker && (trim($line) === '**Answer:**' || trim($line) === '**Answer:' || trim($line) === '**Example Answer:**' || trim($line) === '**Example Answer (STAR):**' || trim($line) === '**Example Answer')) {
-                    $contentStart = true;
-                    $foundAnswerMarker = true;
-
-                    continue;
-                }
-
-                if ($contentStart) {
-                    $questionContent[] = $line;
-                }
+            if (empty($title)) {
+                continue;
             }
 
-            $fullContent = implode("\n", $questionContent);
-            $slug = Str::slug($title);
+            $questionContent = $this->extractContent($lines);
 
             $questions[] = [
                 'title' => $title,
-                'content' => $fullContent,
-                'slug' => $slug,
+                'content' => implode("\n", $questionContent),
+                'slug' => Str::slug($title),
             ];
         }
 
         return $questions;
     }
 
-    private function getTopicDescription(string $topicName): string
+    private function extractTitle(array &$lines): string
     {
-        return match ($topicName) {
-            'PHP' => 'PHP fundamentals, advanced topics, and best practices',
-            'Laravel' => 'Laravel framework, Eloquent, architecture, and testing',
-            'Vue' => 'Vue.js fundamentals, composition API, and state management',
-            'Database' => 'Database design, optimization, and advanced queries',
-            'System-Design' => 'System architecture, design patterns, and scalability',
-            'DevOps' => 'DevOps practices, monitoring, and infrastructure',
-            'Behavioral' => 'Behavioral interview questions and STAR method examples',
-            default => '',
-        };
+        $titleLine = array_shift($lines);
+
+        return str_replace(':**', '', $titleLine)
+                |> (fn($x) => preg_replace('/## Question \d+:/', '', $x))
+                |> trim(...);
     }
 
-    private function getTopicIcon(string $topicName): string
+    private function extractContent(array $lines): array
     {
-        return match ($topicName) {
-            'PHP' => 'code-bracket',
-            'Laravel' => 'cube',
-            'Vue' => 'eye',
-            'Database' => 'server',
-            'System-Design' => 'cube-transparent',
-            'DevOps' => 'cloud',
-            'Behavioral' => 'chat-bubble-left-right',
-            default => 'folder',
-        };
-    }
+        $contentStart = false;
+        $questionContent = [];
+        $foundAnswerMarker = false;
 
-    public function refreshContent(): void
-    {
-        $this->loadMarkdownDirectory();
+        foreach ($lines as $line) {
+            if (preg_match('/^## Question \d+:/', $line)) {
+                continue;
+            }
+
+            if (!$foundAnswerMarker && in_array(trim($line), self::ANSWER_HEADINGS)) {
+                $contentStart = true;
+                $foundAnswerMarker = true;
+                continue;
+            }
+
+            if ($contentStart) {
+                $questionContent[] = $line;
+            }
+        }
+
+        return $questionContent;
     }
 }
