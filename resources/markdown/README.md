@@ -27,6 +27,12 @@ A comprehensive Q&A knowledge base for Senior Software Engineer interviews focus
 - **[State Management](Vue/state-management.md)** - Pinia, Vuex, state patterns, API data fetching
 - **[Performance](Vue/performance.md)** - Optimization and best practices
 
+### JavaScript
+- **[Fundamentals](Javascript/fundamentals.md)** - Execution context, closures, prototypes, event loop, async/await, arrays, ES6+ features
+
+### TypeScript
+- **[Fundamentals](Typescript/fundamentals.md)** - Type system, interfaces vs types, generics, strict mode, decorators, advanced patterns
+
 ### Database
 - **[MySQL](Database/mysql.md)** - Indexing, transactions, isolation levels, locking strategies, query optimization
 - **[PostgreSQL](Database/postgres.md)** - Advanced features, replication, performance
@@ -297,6 +303,8 @@ All code examples are:
 - [ ] Vue Fundamentals
 - [ ] Vue Composition API
 - [ ] Vue State Management
+- [ ] JavaScript Fundamentals
+- [ ] TypeScript Fundamentals
 - [ ] HTML/CSS (Forms, Layouts, Responsive)
 
 ### Database
@@ -389,6 +397,8 @@ This knowledge base is designed to be comprehensive but can always be improved:
 - **PHP Questions**: 15+
 - **Laravel Questions**: 20+
 - **Vue Questions**: 10+
+- **JavaScript Questions**: 15+
+- **TypeScript Questions**: 15+
 - **Database Questions**: 12+
 - **System Design Questions**: 8+
 - **DevOps Questions**: 10+
@@ -399,8 +409,12 @@ This knowledge base is designed to be comprehensive but can always be improved:
 - **PHP Version**: 8.2+
 - **Laravel Version**: 10.x / 11.x / 12.x
 - **Vue Version**: 3.x
+- **JavaScript Version**: ES2020+
+- **TypeScript Version**: 4.5+
 
 ### What's New
+- ✨ JavaScript Fundamentals - 15 questions covering execution context, closures, prototypes, event loop, async/await, arrays, ES6+, memory management, Web APIs, FP patterns, error handling, modules
+- ✨ TypeScript Fundamentals - 15 questions covering type system, interfaces, generics, strict mode, decorators, advanced patterns, testing integration
 - ✨ UNION use cases: When UNION is necessary vs alternatives (Database)
 - ✨ Database constraint for paired nullable columns (CHECK, triggers)
 - ✨ CORS implementation (PHP, Laravel, nginx)
@@ -434,7 +448,7 @@ This knowledge base is designed to be comprehensive but can always be improved:
 
 **By Technology:**
 - **Backend Focus** → PHP, Laravel, Database sections
-- **Full-Stack Focus** → Add Vue, System Design sections
+- **Full-Stack Focus** → Add Vue, JavaScript, TypeScript, System Design sections
 - **DevOps Focus** → DevOps, Database, Infrastructure sections
 - **Leadership Focus** → Behavioral, Process Management, Mentoring
 

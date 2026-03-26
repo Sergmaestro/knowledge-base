@@ -32,7 +32,12 @@
                     :href="`/topic/${topic.slug}`"
                     class="bg-white rounded-lg shadow hover:shadow-md transition p-6">
                     <div class="flex items-center justify-between mb-4">
-                        <h3 class="text-lg font-semibold text-gray-900">{{ topic.name }}</h3>
+                        <div class="flex items-center gap-3">
+                            <div class="flex-shrink-0">
+                                <Icon :name="topic.icon" class="w-6 h-6 text-indigo-600" />
+                            </div>
+                            <h3 class="text-lg font-semibold text-gray-900">{{ topic.name }}</h3>
+                        </div>
                         <span
                             v-if="topic.questions_count"
                             class="text-sm text-gray-500">
@@ -80,6 +85,7 @@
 import Layout from '@/Layouts/AppLayout.vue'
 import {computed} from 'vue'
 import {Link} from "@inertiajs/vue3";
+import Icon from '@/Components/Icon.vue';
 
 const props = defineProps({
     topics: {

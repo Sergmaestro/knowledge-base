@@ -22,6 +22,8 @@ class MarkdownLoader
         'PHP' => ['description' => 'PHP fundamentals, advanced topics, and best practices', 'icon' => 'code-bracket'],
         'Laravel' => ['description' => 'Laravel framework, Eloquent, architecture, and testing', 'icon' => 'cube'],
         'Vue' => ['description' => 'Vue.js fundamentals, composition API, and state management', 'icon' => 'eye'],
+        'Javascript' => ['description' => 'JavaScript fundamentals, ES6+, async patterns, and browser APIs', 'icon' => 'code-bracket'],
+        'Typescript' => ['description' => 'TypeScript type system, generics, decorators, and advanced patterns', 'icon' => 'code-bracket'],
         'Database' => ['description' => 'Database design, optimization, and advanced queries', 'icon' => 'server'],
         'System-Design' => ['description' => 'System architecture, design patterns, and scalability', 'icon' => 'cube-transparent'],
         'DevOps' => ['description' => 'DevOps practices, monitoring, and infrastructure', 'icon' => 'cloud'],

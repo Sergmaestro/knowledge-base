@@ -29,16 +29,14 @@ class TopicRepository
         }
 
         return $topics->map(function ($topic) use ($progressByTopic) {
-            return [
-                'id' => $topic->id,
-                'name' => $topic->name,
-                'slug' => $topic->slug,
-                'questions_count' => $topic->questions_count,
-                'progress' => $topic->questions_count > 0 && $progressByTopic ? [
-                    'completed' => $progressByTopic[$topic->id] ?? 0,
-                    'total' => $topic->questions_count,
-                ] : null,
-            ];
+            $data = $topic->toArray();
+            $data['questions_count'] = $topic->questions_count;
+            $data['progress'] = $topic->questions_count > 0 && $progressByTopic ? [
+                'completed' => $progressByTopic[$topic->id] ?? 0,
+                'total' => $topic->questions_count,
+            ] : null;
+
+            return $data;
         });
     }
 

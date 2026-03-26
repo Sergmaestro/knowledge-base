@@ -11,7 +11,10 @@
                         ? 'bg-indigo-100 text-indigo-700'
                         : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
                 ]">
-                <span>{{ topic.name }}</span>
+                <div class="flex items-center gap-2">
+                    <Icon :name="topic.icon" class="w-4 h-4 flex-shrink-0" />
+                    <span>{{ topic.name }}</span>
+                </div>
                 <span
                     v-if="topic.progress"
                     class="text-xs px-2 py-0.5 rounded-full"
@@ -25,6 +28,7 @@
 
 <script setup>
 import {Link} from '@inertiajs/vue3'
+import Icon from './Icon.vue'
 
 const props = defineProps({
     topics: {
