@@ -53,7 +53,7 @@ A comprehensive Q&A knowledge base for Senior Software Engineer interviews focus
 ### For Interview Preparation
 
 1. **Browse by Topic** - Navigate through the sections above based on your target role
-2. **Use Search** - The built-in search feature (`/api/search`) helps find specific questions
+2. **Use Search** - The built-in search feature (`/search`) helps find specific questions
 3. **Track Progress** - Mark questions as "learned" to track your preparation
 4. **Add Notes** - Use the note feature to add your own insights to any answer
 

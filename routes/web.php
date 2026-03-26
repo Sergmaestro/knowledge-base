@@ -14,8 +14,7 @@ use Illuminate\Support\Facades\Route;
 Route::get('/', [HomeController::class, 'index'])->name('home');
 Route::get('/topic/{slug}', [TopicController::class, 'show'])->name('topic.show');
 Route::get('/question/{slug}', [QuestionController::class, 'show'])->name('question.show');
-Route::get('/search', [SearchController::class, 'index'])->name('search');
-Route::get('/api/search', [SearchController::class, 'apiIndex'])->name('search.api');
+Route::get('/search', [SearchController::class, 'search'])->name('search');
 
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');

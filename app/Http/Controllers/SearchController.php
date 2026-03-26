@@ -11,7 +11,7 @@ class SearchController extends Controller
         private readonly SearchRepository $searchRepository
     ) {}
 
-    public function apiIndex(Request $request)
+    public function search(Request $request)
     {
         $query = $request->input('q', '');
         $results = $this->searchRepository->search($query);

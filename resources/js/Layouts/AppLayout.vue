@@ -239,7 +239,7 @@ function debounce(fn, delay) {
 
 const performSearch = debounce((query) => {
     if (query.length >= 2) {
-        axios.get(`/api/search?q=${encodeURIComponent(query)}`)
+        axios.get(`/search?q=${encodeURIComponent(query)}`)
             .then(({data}) => searchResults.value = data.results || [])
             .catch(() => window.dispatchEvent(new CustomEvent('show-toast', { detail: { message: 'Search failed' } })))
     } else {
