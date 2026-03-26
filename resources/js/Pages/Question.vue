@@ -83,6 +83,82 @@
                 ></div>
             </div>
 
+            <!-- Notes Section -->
+            <div v-if="$page.props.auth?.user" class="mt-8 pt-6 border-t">
+                <h3 class="text-lg font-semibold text-gray-900 mb-4">My Notes</h3>
+
+                <!-- Existing Notes -->
+                <div v-if="question.notes && question.notes.length > 0" class="space-y-4 mb-6">
+                    <div
+                        v-for="note in question.notes"
+                        :key="note.id"
+                        class="bg-white rounded-lg shadow-sm p-4"
+                    >
+                        <div v-if="editingNoteId === note.id" class="space-y-3">
+                            <textarea
+                                v-model="editNoteText"
+                                class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                                rows="3"
+                            ></textarea>
+                            <div class="flex space-x-2">
+                                <button
+                                    @click="updateNote(note.id)"
+                                    class="px-3 py-1 text-sm bg-indigo-600 text-white rounded hover:bg-indigo-700"
+                                >
+                                    Save
+                                </button>
+                                <button
+                                    @click="cancelEdit"
+                                    class="px-3 py-1 text-sm text-gray-600 hover:text-gray-800"
+                                >
+                                    Cancel
+                                </button>
+                            </div>
+                        </div>
+                        <div v-else>
+                            <p class="text-gray-700 whitespace-pre-wrap">{{ note.note }}</p>
+                            <div class="flex items-center justify-between mt-2 text-sm text-gray-500">
+                                <span>{{ formatDate(note.created_at) }}</span>
+                                <div class="flex space-x-2">
+                                    <button
+                                        @click="startEdit(note)"
+                                        class="text-indigo-600 hover:text-indigo-800"
+                                    >
+                                        Edit
+                                    </button>
+                                    <button
+                                        @click="deleteNote(note.id)"
+                                        class="text-red-600 hover:text-red-800"
+                                    >
+                                        Delete
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Add Note Form -->
+                <div class="bg-white rounded-lg shadow-sm p-4">
+                    <h4 class="text-sm font-medium text-gray-700 mb-2">Add a note</h4>
+                    <textarea
+                        v-model="newNote"
+                        class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                        rows="3"
+                        placeholder="Write your note here..."
+                    ></textarea>
+                    <div class="mt-2 flex justify-end">
+                        <button
+                            @click="addNote"
+                            :disabled="!newNote.trim()"
+                            class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                            Add Note
+                        </button>
+                    </div>
+                </div>
+            </div>
+
             <!-- Navigation -->
             <div class="flex justify-between mt-8 pt-6 border-t">
                 <Link
@@ -108,6 +184,7 @@
                     </svg>
                 </Link>
             </div>
+
         </div>
     </Layout>
 </template>
@@ -116,7 +193,7 @@
 import Layout from '@/Layouts/AppLayout.vue'
 import {marked} from 'marked'
 import {Head, Link, router} from '@inertiajs/vue3'
-import {computed} from "vue";
+import {computed, ref} from "vue";
 
 const props = defineProps({
     question: Object,
@@ -127,6 +204,10 @@ const props = defineProps({
         default: () => [],
     },
 })
+
+const newNote = ref('')
+const editingNoteId = ref(null)
+const editNoteText = ref('')
 
 const renderedContent = computed(() => {
     return marked(props.question.content || '')
@@ -142,6 +223,59 @@ const toggleBookmark = () => {
     axios.post('/bookmark/toggle', {question_id: props.question.id})
         .then(() => router.reload())
         .catch(error => console.error('Failed to toggle bookmark:', error))
+}
+
+const addNote = () => {
+    if (!newNote.value.trim()) return
+
+    axios.post('/notes', {
+        question_id: props.question.id,
+        note: newNote.value,
+    })
+        .then(() => {
+            newNote.value = ''
+            router.reload()
+        })
+        .catch(error => console.error('Failed to add note:', error))
+}
+
+const startEdit = (note) => {
+    editingNoteId.value = note.id
+    editNoteText.value = note.note
+}
+
+const cancelEdit = () => {
+    editingNoteId.value = null
+    editNoteText.value = ''
+}
+
+const updateNote = (noteId) => {
+    if (!editNoteText.value.trim()) return
+
+    axios.patch(`/notes/${noteId}`, {
+        note: editNoteText.value,
+    })
+        .then(() => {
+            cancelEdit()
+            router.reload()
+        })
+        .catch(error => console.error('Failed to update note:', error))
+}
+
+const deleteNote = (noteId) => {
+    if (!confirm('Are you sure you want to delete this note?')) return
+
+    axios.delete(`/notes/${noteId}`)
+        .then(() => router.reload())
+        .catch(error => console.error('Failed to delete note:', error))
+}
+
+const formatDate = (dateString) => {
+    return new Date(dateString).toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+    })
 }
 
 const goBack = () => {

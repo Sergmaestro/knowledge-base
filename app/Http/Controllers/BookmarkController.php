@@ -2,46 +2,31 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Bookmark;
+use App\Http\Requests\ToggleBookmarkRequest;
+use App\Repositories\BookmarkRepository;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class BookmarkController extends Controller
 {
-    public function toggle(Request $request): JsonResponse
+    public function __construct(
+        private readonly BookmarkRepository $bookmarkRepository
+    ) {}
+
+    public function toggle(ToggleBookmarkRequest $request): JsonResponse
     {
-        $request->validate([
-            'question_id' => 'required|exists:questions,id',
-        ]);
-
-        $user = $request->user();
-        $questionId = $request->question_id;
-
-        $bookmark = $user->bookmarks()->where('question_id', $questionId)->first();
-
-        if ($bookmark) {
-            $bookmark->delete();
-        } else {
-            Bookmark::create([
-                'user_id' => $user->id,
-                'question_id' => $questionId,
-            ]);
-        }
+        $isBookmarked = $this->bookmarkRepository->toggle($request->question_id);
 
         return response()->json([
             'success' => true,
-            'bookmarked' => (bool) $bookmark,
+            'bookmarked' => $isBookmarked,
         ]);
     }
 
     public function index(Request $request): JsonResponse
     {
         return response()->json(
-            $request->user()
-                ->bookmarks()
-                ->with('question:id,topic_id,title,slug')
-                ->get()
-                ->pluck('question')
+            $this->bookmarkRepository->getUserBookmarks()
         );
     }
 }

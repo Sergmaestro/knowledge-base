@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AnswerNoteController;
 use App\Http\Controllers\BookmarkController;
 use App\Http\Controllers\BookmarksPageController;
 use App\Http\Controllers\HomeController;
@@ -24,6 +25,9 @@ Route::middleware('auth')->group(function () {
     Route::post('/progress/toggle', [ProgressController::class, 'toggle'])->name('progress.toggle');
     Route::get('/progress', [ProgressController::class, 'index'])->name('progress.index');
     Route::post('/bookmark/toggle', [BookmarkController::class, 'toggle'])->name('bookmark.toggle');
+    Route::post('/notes', [AnswerNoteController::class, 'store'])->name('notes.store');
+    Route::patch('/notes/{note}', [AnswerNoteController::class, 'update'])->name('notes.update');
+    Route::delete('/notes/{note}', [AnswerNoteController::class, 'destroy'])->name('notes.destroy');
 });
 
 require __DIR__.'/auth.php';

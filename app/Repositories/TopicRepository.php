@@ -41,4 +41,48 @@ class TopicRepository
             ];
         });
     }
+
+    public function findBySlug(string $slug): Topic
+    {
+        return Topic::where('slug', $slug)
+            ->with(['questions' => function ($query) {
+                $query->select('id', 'topic_id', 'title', 'slug', 'order_index');
+            }])
+            ->firstOrFail();
+    }
+
+    public function getQuestionsWithProgress(Topic $topic): Collection
+    {
+        $questionIds = $topic->questions->pluck('id');
+        $progressByQuestion = [];
+
+        if (Auth::check()) {
+            $progressByQuestion = UserProgress::query()
+                ->where('user_id', Auth::id())
+                ->whereIn('question_id', $questionIds)
+                ->pluck('completed', 'question_id')
+                ->toArray();
+        }
+
+        return $topic->questions->map(function ($question) use ($progressByQuestion) {
+            $question->is_completed = $progressByQuestion[$question->id] ?? false;
+
+            return $question;
+        });
+    }
+
+    public function getProgressStats(Collection $questions): ?array
+    {
+        if (! Auth::check()) {
+            return null;
+        }
+
+        $completed = $questions->where('is_completed', true)->count();
+        $total = $questions->count();
+
+        return [
+            'completed' => $completed,
+            'total' => $total,
+        ];
+    }
 }

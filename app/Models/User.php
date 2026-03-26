@@ -35,6 +35,11 @@ class User extends Authenticatable
         return $this->hasMany(Bookmark::class);
     }
 
+    public function notes(): HasMany
+    {
+        return $this->hasMany(AnswerNote::class);
+    }
+
     public function completedQuestions()
     {
         return $this->belongsToMany(Question::class, 'user_progress')

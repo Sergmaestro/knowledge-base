@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Laravel\Scout\Searchable;
 
 class Question extends Model
@@ -25,6 +26,16 @@ class Question extends Model
     public function topic(): BelongsTo
     {
         return $this->belongsTo(Topic::class);
+    }
+
+    public function notes(): HasMany
+    {
+        return $this->hasMany(AnswerNote::class);
+    }
+
+    public function userNotes(): HasMany
+    {
+        return $this->hasMany(AnswerNote::class)->where('user_id', auth()->id());
     }
 
     public function toSearchableArray(): array

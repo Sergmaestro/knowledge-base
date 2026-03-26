@@ -2,29 +2,23 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Question;
-use App\Models\UserProgress;
-use Illuminate\Http\Request;
+use App\Http\Requests\ToggleProgressRequest;
+use App\Http\Requests\UpdateProgressRequest;
+use App\Repositories\ProgressRepository;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 
 class ProgressController extends Controller
 {
-    public function update(Request $request): JsonResponse
-    {
-        $request->validate([
-            'question_id' => 'required|exists:questions,id',
-            'completed' => 'required|boolean',
-        ]);
+    public function __construct(
+        private readonly ProgressRepository $progressRepository
+    ) {}
 
-        $progress = UserProgress::updateOrCreate(
-            [
-                'user_id' => $request->user()->id,
-                'question_id' => $request->question_id,
-            ],
-            [
-                'completed' => $request->completed,
-                'completed_at' => $request->completed ? now() : null,
-            ]
+    public function update(UpdateProgressRequest $request): JsonResponse
+    {
+        $progress = $this->progressRepository->update(
+            $request->question_id,
+            $request->completed
         );
 
         return response()->json([
@@ -33,49 +27,20 @@ class ProgressController extends Controller
         ]);
     }
 
-    public function toggle(Request $request): JsonResponse
+    public function toggle(ToggleProgressRequest $request): JsonResponse
     {
-        $request->validate([
-            'question_id' => 'required|exists:questions,id',
-        ]);
-
-        $user = $request->user();
-        $questionId = $request->question_id;
-
-        $progress = $user->progress()->where('question_id', $questionId)->first();
-
-        if ($progress) {
-            $progress->update([
-                'completed' => !$progress->completed,
-                'completed_at' => !$progress->completed ? now() : null,
-            ]);
-        } else {
-            $progress = UserProgress::create([
-                'user_id' => $user->id,
-                'question_id' => $questionId,
-                'completed' => true,
-                'completed_at' => now(),
-            ]);
-        }
+        $completed = $this->progressRepository->toggle($request->question_id);
 
         return response()->json([
             'success' => true,
-            'completed' => (bool) $progress,
+            'completed' => $completed,
         ]);
     }
 
     public function index(Request $request): JsonResponse
     {
-        $topicId = $request->topic_id;
-
-        $query = $request->user()->progress()->with('question');
-
-        if ($topicId) {
-            $query->whereHas('question', fn($q) => $q->where('topic_id', $topicId));
-        }
-
-        $progress = $query->get()->pluck('completed', 'question_id');
-
-        return response()->json($progress);
+        return response()->json(
+            $this->progressRepository->getUserProgress($request->topic_id)
+        );
     }
 }
