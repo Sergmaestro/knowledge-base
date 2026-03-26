@@ -110,6 +110,6 @@ const allTopics = computed(() => {
 const toggleProgress = (questionId) => {
     axios.post('/progress/toggle', {question_id: questionId})
         .then(() => router.reload())
-        .catch(error => console.error('Failed to toggle progress:', error))
+        .catch(() => window.dispatchEvent(new CustomEvent('show-toast', { detail: { message: 'Failed to toggle progress' } })))
 }
 </script>

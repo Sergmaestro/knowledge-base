@@ -127,7 +127,7 @@
                                         Edit
                                     </button>
                                     <button
-                                        @click="deleteNote(note.id)"
+                                        @click="confirmDeleteNote(note.id)"
                                         class="text-red-600 hover:text-red-800"
                                     >
                                         Delete
@@ -186,6 +186,14 @@
             </div>
 
         </div>
+        <ConfirmDialog
+            :show="showDeleteConfirm"
+            title="Delete Note"
+            message="Are you sure you want to delete this note?"
+            confirm-text="Delete"
+            @confirm="deleteNote"
+            @close="showDeleteConfirm = false; noteToDelete = null"
+        />
     </Layout>
 </template>
 
@@ -194,6 +202,7 @@ import Layout from '@/Layouts/AppLayout.vue'
 import {marked} from 'marked'
 import {Head, Link, router} from '@inertiajs/vue3'
 import {computed, ref} from "vue";
+import ConfirmDialog from '@/Components/ConfirmDialog.vue';
 
 const props = defineProps({
     question: Object,
@@ -208,6 +217,8 @@ const props = defineProps({
 const newNote = ref('')
 const editingNoteId = ref(null)
 const editNoteText = ref('')
+const showDeleteConfirm = ref(false)
+const noteToDelete = ref(null)
 
 const renderedContent = computed(() => {
     return marked(props.question.content || '')
@@ -216,13 +227,13 @@ const renderedContent = computed(() => {
 const toggleProgress = () => {
     axios.post('/progress/toggle', {question_id: props.question.id})
         .then(() => router.reload())
-        .catch(error => console.error('Failed to toggle progress:', error))
+        .catch(() => window.dispatchEvent(new CustomEvent('show-toast', { detail: { message: 'Failed to toggle progress' } })))
 }
 
 const toggleBookmark = () => {
     axios.post('/bookmark/toggle', {question_id: props.question.id})
         .then(() => router.reload())
-        .catch(error => console.error('Failed to toggle bookmark:', error))
+        .catch(() => window.dispatchEvent(new CustomEvent('show-toast', { detail: { message: 'Failed to toggle bookmark' } })))
 }
 
 const addNote = () => {
@@ -236,7 +247,7 @@ const addNote = () => {
             newNote.value = ''
             router.reload()
         })
-        .catch(error => console.error('Failed to add note:', error))
+        .catch(() => window.dispatchEvent(new CustomEvent('show-toast', { detail: { message: 'Failed to add note' } })))
 }
 
 const startEdit = (note) => {
@@ -259,15 +270,22 @@ const updateNote = (noteId) => {
             cancelEdit()
             router.reload()
         })
-        .catch(error => console.error('Failed to update note:', error))
+        .catch(() => window.dispatchEvent(new CustomEvent('show-toast', { detail: { message: 'Failed to update note' } })))
 }
 
-const deleteNote = (noteId) => {
-    if (!confirm('Are you sure you want to delete this note?')) return
+const confirmDeleteNote = (noteId) => {
+    noteToDelete.value = noteId
+    showDeleteConfirm.value = true
+}
 
-    axios.delete(`/notes/${noteId}`)
+const deleteNote = () => {
+    if (!noteToDelete.value) return
+
+    axios.delete(`/notes/${noteToDelete.value}`)
         .then(() => router.reload())
-        .catch(error => console.error('Failed to delete note:', error))
+        .catch(() => window.dispatchEvent(new CustomEvent('show-toast', { detail: { message: 'Failed to delete note' } })))
+    showDeleteConfirm.value = false
+    noteToDelete.value = null
 }
 
 const formatDate = (dateString) => {

@@ -201,6 +201,8 @@
                 </div>
             </div>
         </div>
+
+        <Toast />
     </div>
 </template>
 
@@ -208,6 +210,7 @@
 import {ref, watch, nextTick} from 'vue'
 import {Link} from '@inertiajs/vue3'
 import Sidebar from '@/Components/Sidebar.vue'
+import Toast from '@/Components/Toast.vue'
 
 const props = defineProps({
     topics: {
@@ -238,7 +241,7 @@ const performSearch = debounce((query) => {
     if (query.length >= 2) {
         axios.get(`/api/search?q=${encodeURIComponent(query)}`)
             .then(({data}) => searchResults.value = data.results || [])
-            .catch(error => console.error('Search failed:', error))
+            .catch(() => window.dispatchEvent(new CustomEvent('show-toast', { detail: { message: 'Search failed' } })))
     } else {
         searchResults.value = []
     }
