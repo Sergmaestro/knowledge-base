@@ -12,7 +12,9 @@ class MarkdownLoader
 {
     private const array ANSWER_HEADINGS = [
         '**Answer:**',
+        '**Answer**',
         '**Answer:',
+        '**Answer',
         '**Example Answer:**',
         '**Example Answer (STAR):**',
         '**Example Answer',
