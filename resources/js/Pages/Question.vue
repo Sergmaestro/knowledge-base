@@ -30,48 +30,19 @@
             <div class="flex items-start justify-between mb-6">
                 <h1 class="text-3xl font-bold text-gray-900">{{ question.title }}</h1>
 
-                <div class="flex items-center space-x-2">
+                <div class="flex items-center space-x-2"
+                     v-if="$page.props.auth?.user">
                     <!-- Bookmark Button -->
-                    <button
-                        v-if="$page.props.auth?.user"
-                        @click="toggleBookmark"
-                        class="p-2 text-gray-400 hover:text-gray-600 transition"
-                    >
-                        <svg
-                            v-if="question.is_bookmarked"
-                            class="w-6 h-6 text-yellow-500"
-                            fill="currentColor"
-                            viewBox="0 0 20 20"
-                        >
-                            <path d="M5 4a2 2 0 012-2h6a2 2 0 012 2v14l-5-2.5L5 18V4z"/>
-                        </svg>
-                        <svg v-else class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                  d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"/>
-                        </svg>
-                    </button>
+                    <BookmarkButton
+                        :is_bookmarked="question.is_bookmarked"
+                        @toggle="toggleBookmark"
+                    />
 
                     <!-- Completion Toggle -->
-                    <button
-                        v-if="$page.props.auth?.user"
-                        @click="toggleProgress"
-                        class="flex items-center px-3 py-1.5 text-sm font-medium rounded-md transition"
-                        :class="question.is_completed
-              ? 'bg-green-100 text-green-700 hover:bg-green-200'
-              : 'bg-gray-100 text-gray-600 hover:bg-gray-200'"
-                    >
-                        <svg
-                            v-if="question.is_completed"
-                            class="w-4 h-4 mr-1"
-                            fill="currentColor"
-                            viewBox="0 0 20 20"
-                        >
-                            <path fill-rule="evenodd"
-                                  d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                                  clip-rule="evenodd"/>
-                        </svg>
-                        {{ question.is_completed ? 'Completed' : 'Mark Complete' }}
-                    </button>
+                    <CompleteButton
+                        :is_completed="question.is_completed"
+                        @toggle="toggleProgress"
+                    />
                 </div>
             </div>
 
@@ -81,6 +52,19 @@
                     class="prose prose-indigo max-w-none"
                     v-html="renderedContent"
                 ></div>
+            </div>
+
+            <div class="flex items-start justify-end mt-6"
+                 v-if="$page.props.auth?.user">
+                <div class="flex items-center space-x-2">
+                    <BookmarkButton
+                        :is_bookmarked="question.is_bookmarked"
+                        @toggle="toggleBookmark"/>
+
+                    <CompleteButton
+                        :is_completed="question.is_completed"
+                        @toggle="toggleProgress"/>
+                </div>
             </div>
 
             <!-- Notes Section -->
@@ -203,6 +187,8 @@ import {marked} from 'marked'
 import {Head, Link, router} from '@inertiajs/vue3'
 import {computed, ref} from "vue";
 import ConfirmDialog from '@/Components/ConfirmDialog.vue';
+import CompleteButton from '@/Components/CompleteButton.vue';
+import BookmarkButton from '@/Components/BookmarkButton.vue';
 
 const props = defineProps({
     question: Object,
@@ -227,13 +213,13 @@ const renderedContent = computed(() => {
 const toggleProgress = () => {
     axios.post('/progress/toggle', {question_id: props.question.id})
         .then(() => router.reload())
-        .catch(() => window.dispatchEvent(new CustomEvent('show-toast', { detail: { message: 'Failed to toggle progress' } })))
+        .catch(() => window.dispatchEvent(new CustomEvent('show-toast', {detail: {message: 'Failed to toggle progress'}})))
 }
 
 const toggleBookmark = () => {
     axios.post('/bookmark/toggle', {question_id: props.question.id})
         .then(() => router.reload())
-        .catch(() => window.dispatchEvent(new CustomEvent('show-toast', { detail: { message: 'Failed to toggle bookmark' } })))
+        .catch(() => window.dispatchEvent(new CustomEvent('show-toast', {detail: {message: 'Failed to toggle bookmark'}})))
 }
 
 const addNote = () => {
@@ -247,7 +233,7 @@ const addNote = () => {
             newNote.value = ''
             router.reload()
         })
-        .catch(() => window.dispatchEvent(new CustomEvent('show-toast', { detail: { message: 'Failed to add note' } })))
+        .catch(() => window.dispatchEvent(new CustomEvent('show-toast', {detail: {message: 'Failed to add note'}})))
 }
 
 const startEdit = (note) => {
@@ -270,7 +256,7 @@ const updateNote = (noteId) => {
             cancelEdit()
             router.reload()
         })
-        .catch(() => window.dispatchEvent(new CustomEvent('show-toast', { detail: { message: 'Failed to update note' } })))
+        .catch(() => window.dispatchEvent(new CustomEvent('show-toast', {detail: {message: 'Failed to update note'}})))
 }
 
 const confirmDeleteNote = (noteId) => {
@@ -283,7 +269,7 @@ const deleteNote = () => {
 
     axios.delete(`/notes/${noteToDelete.value}`)
         .then(() => router.reload())
-        .catch(() => window.dispatchEvent(new CustomEvent('show-toast', { detail: { message: 'Failed to delete note' } })))
+        .catch(() => window.dispatchEvent(new CustomEvent('show-toast', {detail: {message: 'Failed to delete note'}})))
     showDeleteConfirm.value = false
     noteToDelete.value = null
 }
@@ -297,10 +283,8 @@ const formatDate = (dateString) => {
 }
 
 const goBack = () => {
-    console.log('document.referer', document.referrer);
-    console.log('window.location.host', window.location.host);
-    if (document.referrer && document.referrer.includes(window.location.host)) {
-        router.visit(document.referrer)
+    if (window.history.length) {
+        window.history.back()
     } else {
         router.visit('/')
     }

@@ -20,7 +20,7 @@ class QuestionController extends Controller
         $adjacent = $this->questionRepository->getAdjacentQuestions($question);
 
         return Inertia::render('Question', [
-            'question' => $this->questionRepository->toResource($question, $userData, $adjacent),
+            'question' => $this->questionRepository->toResource($question, $userData),
             'next_question' => $adjacent['next'],
             'prev_question' => $adjacent['prev'],
             'topics' => $this->topicRepository->getAllWithProgress(),

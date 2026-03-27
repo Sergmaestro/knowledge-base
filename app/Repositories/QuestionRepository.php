@@ -65,7 +65,7 @@ class QuestionRepository
         ];
     }
 
-    public function toResource(Question $question, array $userData, array $adjacent): array
+    public function toResource(Question $question, array $userData): array
     {
         return [
             'id' => $question->id,
