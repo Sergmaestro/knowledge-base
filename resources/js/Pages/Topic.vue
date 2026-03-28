@@ -67,6 +67,7 @@
                             </button>
 
                             <span class="font-medium text-gray-900">{{ question.title }}</span>
+                            <Tag v-if="question.tag" :label="question.tag" />
                         </div>
 
                         <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -88,6 +89,7 @@
 import Layout from '@/Layouts/AppLayout.vue'
 import {Head, Link, router} from '@inertiajs/vue3'
 import {computed} from 'vue'
+import Tag from '@/Components/Tag.vue'
 
 const props = defineProps({
     topic: Object,

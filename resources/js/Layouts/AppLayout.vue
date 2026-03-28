@@ -189,9 +189,12 @@
                                 class="block p-4 hover:bg-gray-50"
                                 @click="showSearch = false"
                             >
-                                <div class="font-medium text-gray-900">{{ result.title }}</div>
+                                <div class="flex items-center gap-2">
+                                    <div class="font-medium text-gray-900">{{ result.title }}</div>
+                                    <Tag v-if="result.tag" :label="result.tag" />
+                                </div>
                                 <div class="text-sm text-gray-500 mt-1">{{ result.topic.name }}</div>
-                                <div class="text-sm text-gray-600 mt-1 line-clamp-2">{{ result.excerpt }}</div>
+                                <div class="text-sm text-gray-600 mt-1 line-clamp-2" v-html="highlightMatch(result.excerpt, searchQuery)"></div>
                             </Link>
                         </div>
                         <div v-else-if="searchQuery.length >= 2" class="p-8 text-center text-gray-500">
@@ -211,6 +214,7 @@ import {ref, watch, nextTick} from 'vue'
 import {Link} from '@inertiajs/vue3'
 import Sidebar from '@/Components/Sidebar.vue'
 import Toast from '@/Components/Toast.vue'
+import Tag from '@/Components/Tag.vue'
 
 const props = defineProps({
     topics: {
@@ -231,6 +235,12 @@ const searchInput = ref(null)
 
 const isActive = (slug) => {
     return window.location.pathname.startsWith(`/topic/${slug}`)
+}
+
+const highlightMatch = (text, query) => {
+    if (!query || !text) return text
+    const regex = new RegExp(`(${query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi')
+    return text.replace(regex, '<mark>$1</mark>')
 }
 
 function debounce(fn, delay) {

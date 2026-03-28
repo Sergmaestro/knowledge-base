@@ -68,10 +68,7 @@ class QuestionRepository
     public function toResource(Question $question, array $userData): array
     {
         return [
-            'id' => $question->id,
-            'title' => $question->title,
-            'content' => $question->content,
-            'slug' => $question->slug,
+            ...$question->only(['id', 'tag', 'title', 'content', 'slug']),
             'topic' => [
                 'name' => $question->topic->name,
                 'slug' => $question->topic->slug,

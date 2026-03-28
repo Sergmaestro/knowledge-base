@@ -28,7 +28,12 @@
 
             <!-- Question Header -->
             <div class="flex items-start justify-between mb-6">
-                <h1 class="text-3xl font-bold text-gray-900">{{ question.title }}</h1>
+                <div>
+                    <div class="flex items-center gap-2 mb-2" v-if="question.tag">
+                        <Tag :label="question.tag" />
+                    </div>
+                    <h1 class="text-3xl font-bold text-gray-900">{{ question.title }}</h1>
+                </div>
 
                 <div class="flex items-center space-x-2"
                      v-if="$page.props.auth?.user">
@@ -189,6 +194,7 @@ import {computed, ref} from "vue";
 import ConfirmDialog from '@/Components/ConfirmDialog.vue';
 import CompleteButton from '@/Components/CompleteButton.vue';
 import BookmarkButton from '@/Components/BookmarkButton.vue';
+import Tag from '@/Components/Tag.vue';
 
 const props = defineProps({
     question: Object,

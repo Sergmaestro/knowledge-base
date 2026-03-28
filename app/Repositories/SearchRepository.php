@@ -13,44 +13,78 @@ class SearchRepository
             return collect();
         }
 
-        $searchTerm = "%$query%";
+        // Laravel Scout search
+        $questionIds = Question::search($query)->get()->pluck('id');
 
-        return Question::select('questions.*', 'topics.name as topic_name', 'topics.slug as topic_slug')
-            ->join('topics', 'questions.topic_id', 'topics.id')
-            ->where(function ($q) use ($searchTerm) {
-                $q->whereLike('questions.title', $searchTerm)
-                    ->orWhereLike('questions.content', $searchTerm);
-            })
-            ->limit(50)
+        if ($questionIds->isEmpty()) {
+            return collect();
+        }
+
+        return Question::with('topic')
+            ->whereIn('id', $questionIds)
             ->get()
-            ->map(function ($question) {
+            ->map(function ($question) use ($query) {
                 return [
-                    'id' => $question->id,
-                    'title' => $question->title,
-                    'slug' => $question->slug,
+                    ...$question->only(['id', 'title', 'slug', 'tag']),
                     'topic' => [
-                        'name' => $question->topic_name,
-                        'slug' => $question->topic_slug,
+                        'name' => $question->topic->name,
+                        'slug' => $question->topic->slug,
                     ],
-                    'excerpt' => $this->getExcerpt($question->content, 200),
+                    'excerpt' => $this->getExcerpt($question->content, $query, 200),
                 ];
             });
     }
 
-    private function getExcerpt(string $content, int $length = 200): string
+    private function getExcerpt(string $content, string $query, int $length = 200): string
     {
+        // Clean content: remove HTML tags, normalize whitespace
         $content = strip_tags($content);
         $content = preg_replace('/\s+/', ' ', $content);
         $content = trim($content);
 
-        if (! mb_check_encoding($content, 'UTF-8')) {
+        // Ensure UTF-8 encoding
+        if (!mb_check_encoding($content, 'UTF-8')) {
             $content = mb_convert_encoding($content, 'UTF-8', 'ISO-8859-1');
         }
 
-        if (strlen($content) <= $length) {
-            return $content;
+        // Case-insensitive search for the query in content
+        $queryLower = mb_strtolower($query);
+        $contentLower = mb_strtolower($content);
+        $matchPos = mb_stripos($contentLower, $queryLower);
+
+        // No match found - return default excerpt from the beginning
+        if ($matchPos === false) {
+            if (mb_strlen($content) <= $length) {
+                return $content;
+            }
+
+            return mb_substr($content, 0, $length) . '...';
         }
 
-        return mb_substr($content, 0, $length).'...';
+        // Match found - center excerpt around the match position
+        // Calculate start position: go back half the length from match
+        $start = max(0, $matchPos - (int)($length / 2));
+
+        // Calculate end position: start + desired length
+        $end = min(mb_strlen($content), $start + $length);
+
+        // If end hit the content boundary, shift start back to keep full length
+        if ($end - $start < $length) {
+            $start = max(0, $end - $length);
+        }
+
+        // Extract the excerpt slice
+        $excerpt = mb_substr($content, $start, $end - $start);
+
+        // Add ellipsis if we're not at content boundaries
+        if ($start > 0) {
+            $excerpt = '...' . $excerpt;
+        }
+
+        if ($end < mb_strlen($content)) {
+            $excerpt = $excerpt . '...';
+        }
+
+        return $excerpt;
     }
 }

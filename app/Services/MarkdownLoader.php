@@ -4,9 +4,11 @@ namespace App\Services;
 
 use App\Repositories\QuestionRepository;
 use App\Repositories\TopicRepository;
+use App\Models\Question;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
+use Symfony\Component\Finder\SplFileInfo;
 
 class MarkdownLoader
 {
@@ -63,6 +65,9 @@ class MarkdownLoader
         $this->topicRepository->upsert($topicData);
         $this->persistQuestions($questionData);
 
+        // Sync all questions to Scout search index
+        Question::query()->searchable();
+
         $stats['topics'] = count($topicData);
         $stats['questions'] = count($questionData);
 
@@ -110,11 +115,11 @@ class MarkdownLoader
             $files = File::files($directory);
             $orderIndex = 0;
 
-            foreach ($files as $file) {
-                if ($file->getExtension() !== 'md') {
-                    continue;
-                }
+            $mdFiles = array_filter($files, fn($file) => $file->getExtension() === 'md');
+            usort($mdFiles, $this->sortMarkdownFiles(...));
 
+            foreach ($mdFiles as $file) {
+                $tag = $file->getBasename('.md');
                 $content = File::get($file->getPathname());
                 $parsedQuestions = $this->parseQuestions($content);
 
@@ -125,6 +130,7 @@ class MarkdownLoader
                         'slug' => $question['slug'],
                         'title' => $question['title'],
                         'content' => $question['content'],
+                        'tag' => $tag,
                         'order_index' => $orderIndex++,
                         'created_at' => now(),
                         'updated_at' => now(),
@@ -215,5 +221,22 @@ class MarkdownLoader
         }
 
         return $questionContent;
+    }
+
+    /**
+     * Fundamental questions should also go first.
+     * Advanced should always be at the bottom of the list
+     */
+    private function sortMarkdownFiles(SplFileInfo $a, SplFileInfo $b): int
+    {
+        $nameA = $a->getFilename();
+        $nameB = $b->getFilename();
+
+        if ($nameA === 'fundamentals.md') return -1;
+        if ($nameB === 'fundamentals.md') return 1;
+        if ($nameA === 'advanced.md') return 1;
+        if ($nameB === 'advanced.md') return -1;
+
+        return $nameA <=> $nameB;
     }
 }

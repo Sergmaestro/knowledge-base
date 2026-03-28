@@ -43,9 +43,7 @@ class TopicRepository
     public function findBySlug(string $slug): Topic
     {
         return Topic::where('slug', $slug)
-            ->with(['questions' => function ($query) {
-                $query->select('id', 'topic_id', 'title', 'slug', 'order_index');
-            }])
+            ->with(['questions:id,topic_id,title,slug,tag,order_index'])
             ->firstOrFail();
     }
 

@@ -16,6 +16,7 @@ class Question extends Model
         'title',
         'content',
         'slug',
+        'tag',
         'order_index',
     ];
 
@@ -44,7 +45,21 @@ class Question extends Model
             'id' => $this->id,
             'title' => $this->title,
             'content' => $this->content,
+            'tag' => $this->tag,
             'topic_id' => $this->topic_id,
+        ];
+    }
+
+    public function toSearchableArrayWithRelations(): array
+    {
+        return [
+            'id' => $this->id,
+            'title' => $this->title,
+            'content' => $this->content,
+            'tag' => $this->tag,
+            'topic_id' => $this->topic_id,
+            'topic_name' => $this->topic?->name,
+            'topic_slug' => $this->topic?->slug,
         ];
     }
 
