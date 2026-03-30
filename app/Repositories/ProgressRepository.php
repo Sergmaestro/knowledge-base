@@ -36,7 +36,7 @@ class ProgressRepository
             return $progress->completed;
         }
 
-        $progress = UserProgress::create([
+        UserProgress::create([
             'user_id' => auth()->id(),
             'question_id' => $questionId,
             'completed' => true,

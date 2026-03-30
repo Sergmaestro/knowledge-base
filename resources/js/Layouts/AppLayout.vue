@@ -36,10 +36,12 @@
 
                         <!-- Auth Links (desktop) -->
                         <template v-if="$page.props.auth?.user">
-                            <Link href="/bookmarks" class="hidden lg:inline-block text-sm text-gray-600 hover:text-gray-900">
+                            <Link href="/bookmarks"
+                                  class="hidden lg:inline-block text-sm text-gray-600 hover:text-gray-900">
                                 Bookmarks
                             </Link>
-                            <Link :href="route('profile.edit')" class="hidden lg:inline-block text-sm text-gray-600 hover:text-gray-900">
+                            <Link :href="route('profile.edit')"
+                                  class="hidden lg:inline-block text-sm text-gray-600 hover:text-gray-900">
                                 {{ $page.props.auth.user.name }}
                             </Link>
                             <Link href="/logout" method="post" as="button"
@@ -48,8 +50,12 @@
                             </Link>
                         </template>
                         <template v-else>
-                            <Link href="/login" class="hidden lg:inline-block text-sm text-gray-600 hover:text-gray-900">Log in</Link>
-                            <Link href="/register" class="hidden lg:inline-block text-sm text-gray-600 hover:text-gray-900">Register</Link>
+                            <Link href="/login"
+                                  class="hidden lg:inline-block text-sm text-gray-600 hover:text-gray-900">Log in
+                            </Link>
+                            <Link href="/register"
+                                  class="hidden lg:inline-block text-sm text-gray-600 hover:text-gray-900">Register
+                            </Link>
                         </template>
                     </div>
                 </div>
@@ -67,7 +73,8 @@
                     <span class="font-semibold text-gray-900">Topics</span>
                     <button @click="showMobileMenu = false" class="p-1 text-gray-500 hover:text-gray-700">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                  d="M6 18L18 6M6 6l12 12"/>
                         </svg>
                     </button>
                 </div>
@@ -191,10 +198,11 @@
                             >
                                 <div class="flex items-center gap-2">
                                     <div class="font-medium text-gray-900">{{ result.title }}</div>
-                                    <Tag v-if="result.tag" :label="result.tag" />
+                                    <Tag v-if="result.tag" :label="result.tag"/>
                                 </div>
                                 <div class="text-sm text-gray-500 mt-1">{{ result.topic.name }}</div>
-                                <div class="text-sm text-gray-600 mt-1 line-clamp-2" v-html="highlightMatch(result.excerpt, searchQuery)"></div>
+                                <div class="text-sm text-gray-600 mt-1 line-clamp-2"
+                                     v-html="highlightMatch(result.excerpt, searchQuery)"></div>
                             </Link>
                         </div>
                         <div v-else-if="searchQuery.length >= 2" class="p-8 text-center text-gray-500">
@@ -205,7 +213,7 @@
             </div>
         </div>
 
-        <Toast />
+        <Toast/>
     </div>
 </template>
 
@@ -255,7 +263,7 @@ const performSearch = debounce((query) => {
     if (query.length >= 2) {
         axios.get(`/search?q=${encodeURIComponent(query)}`)
             .then(({data}) => searchResults.value = data.results || [])
-            .catch(() => window.dispatchEvent(new CustomEvent('show-toast', { detail: { message: 'Search failed' } })))
+            .catch(() => window.dispatchEvent(new CustomEvent('show-toast', {detail: {message: 'Search failed'}})))
     } else {
         searchResults.value = []
     }

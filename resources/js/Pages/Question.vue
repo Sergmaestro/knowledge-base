@@ -27,11 +27,11 @@
             </div>
 
             <!-- Question Header -->
+            <div class="flex items-center gap-2 mb-2" v-if="question.tag">
+                <Tag :label="question.tag" />
+            </div>
             <div class="flex items-start justify-between mb-6">
                 <div>
-                    <div class="flex items-center gap-2 mb-2" v-if="question.tag">
-                        <Tag :label="question.tag" />
-                    </div>
                     <h1 class="text-3xl font-bold text-gray-900">{{ question.title }}</h1>
                 </div>
 
@@ -151,23 +151,23 @@
             <!-- Navigation -->
             <div class="flex justify-between mt-8 pt-6 border-t">
                 <Link
-                    v-if="prev_question"
-                    :href="`/question/${prev_question.slug}`"
+                    v-if="question.navigation.prev"
+                    :href="`/question/${question.navigation.prev.slug}`"
                     class="flex items-center text-indigo-600 hover:text-indigo-700"
                 >
                     <svg class="w-5 h-5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
                     </svg>
-                    {{ prev_question.title }}
+                    {{ question.navigation.prev.title }}
                 </Link>
                 <div v-else></div>
 
                 <Link
-                    v-if="next_question"
-                    :href="`/question/${next_question.slug}`"
+                    v-if="question.navigation.next"
+                    :href="`/question/${question.navigation.next.slug}`"
                     class="flex items-center text-indigo-600 hover:text-indigo-700"
                 >
-                    {{ next_question.title }}
+                    {{ question.navigation.next.title }}
                     <svg class="w-5 h-5 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
                     </svg>
@@ -198,8 +198,6 @@ import Tag from '@/Components/Tag.vue';
 
 const props = defineProps({
     question: Object,
-    next_question: Object,
-    prev_question: Object,
     topics: {
         type: Array,
         default: () => [],

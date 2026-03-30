@@ -68,8 +68,10 @@ class MarkdownLoader
         // Sync all questions to Scout search index
         Question::query()->searchable();
 
-        $stats['topics'] = count($topicData);
-        $stats['questions'] = count($questionData);
+        $stats = [
+            'topics' => count($topicData),
+            'questions' => count($questionData)
+        ];
 
         Log::info('Markdown loaded successfully', $stats);
 
@@ -224,7 +226,7 @@ class MarkdownLoader
     }
 
     /**
-     * Fundamental questions should also go first.
+     * Fundamental questions should always go first.
      * Advanced should always be at the bottom of the list
      */
     private function sortMarkdownFiles(SplFileInfo $a, SplFileInfo $b): int

@@ -20,16 +20,13 @@ class SearchRepository
             return collect();
         }
 
-        return Question::with('topic')
+        return Question::with('topic:id,name,slug')
             ->whereIn('id', $questionIds)
             ->get()
             ->map(function ($question) use ($query) {
                 return [
                     ...$question->only(['id', 'title', 'slug', 'tag']),
-                    'topic' => [
-                        'name' => $question->topic->name,
-                        'slug' => $question->topic->slug,
-                    ],
+                    'topic' => $question->topic->only(['name', 'slug']),
                     'excerpt' => $this->getExcerpt($question->content, $query, 200),
                 ];
             });
