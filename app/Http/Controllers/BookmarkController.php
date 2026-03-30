@@ -15,7 +15,10 @@ class BookmarkController extends Controller
 
     public function toggle(ToggleBookmarkRequest $request): JsonResponse
     {
-        $isBookmarked = $this->bookmarkRepository->toggle($request->question_id);
+        $isBookmarked = $this->bookmarkRepository->toggle(
+            $request->question_id,
+            $request->user()->id
+        );
 
         return response()->json([
             'success' => true,
@@ -26,7 +29,7 @@ class BookmarkController extends Controller
     public function index(Request $request): JsonResponse
     {
         return response()->json(
-            $this->bookmarkRepository->getUserBookmarks()
+            $this->bookmarkRepository->getUserBookmarks($request->user()->id)
         );
     }
 }

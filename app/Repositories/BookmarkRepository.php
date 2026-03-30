@@ -7,9 +7,9 @@ use Illuminate\Support\Collection;
 
 class BookmarkRepository
 {
-    public function toggle(int $questionId): bool
+    public function toggle(int $questionId, int $userId): bool
     {
-        $bookmark = auth()->user()->bookmarks()
+        $bookmark = Bookmark::whereUserId($userId)
             ->where('question_id', $questionId)
             ->first();
 
@@ -20,17 +20,16 @@ class BookmarkRepository
         }
 
         Bookmark::create([
-            'user_id' => auth()->id(),
+            'user_id' => $userId,
             'question_id' => $questionId,
         ]);
 
         return true;
     }
 
-    public function getUserBookmarks(): Collection
+    public function getUserBookmarks(int $userId): Collection
     {
-        return auth()->user()
-            ->bookmarks()
+        return Bookmark::whereUserId($userId)
             ->with('question:id,topic_id,title,slug')
             ->get()
             ->pluck('question');

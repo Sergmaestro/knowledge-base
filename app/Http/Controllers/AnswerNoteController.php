@@ -13,13 +13,15 @@ class AnswerNoteController extends Controller
 {
     public function __construct(
         private readonly AnswerNoteRepository $noteRepository
-    ) {}
+    )
+    {
+    }
 
     public function store(StoreNoteRequest $request): JsonResponse
     {
         $this->noteRepository->create(
-            $request->input('question_id'),
-            $request->input('note')
+            $request->validated(),
+            $request->user()->id,
         );
 
         return response()->json(['success' => true, 'stage' => 'stored']);
