@@ -3,18 +3,21 @@
 namespace App\Http\Controllers;
 
 use App\Repositories\SearchRepository;
+use App\Services\SearchService;
 use Illuminate\Http\Request;
 
 class SearchController extends Controller
 {
     public function __construct(
-        private readonly SearchRepository $searchRepository
-    ) {}
+        private readonly SearchService $searchService
+    )
+    {
+    }
 
     public function search(Request $request)
     {
         $query = $request->input('q', '');
-        $results = $this->searchRepository->search($query);
+        $results = $this->searchService->search($query);
 
         $json = json_encode([
             'results' => $results->toArray(),

@@ -1,12 +1,16 @@
 <?php
 
-namespace App\Repositories;
+namespace App\Services;
 
-use App\Models\Question;
+use App\Repositories\QuestionRepository;
 use Illuminate\Support\Collection;
 
-class SearchRepository
+class SearchService
 {
+    public function __construct(private readonly QuestionRepository $questionRepository)
+    {
+    }
+
     public function search(string $query): Collection
     {
         if (strlen($query) < 2) {
@@ -14,20 +18,14 @@ class SearchRepository
         }
 
         // Laravel Scout search
-        $questionIds = Question::search($query)->get()->pluck('id');
+        $questions = $this->questionRepository->search($query);
 
-        if ($questionIds->isEmpty()) {
-            return collect();
-        }
-
-        return Question::with('topic:id,name,slug')
-            ->whereIn('id', $questionIds)
-            ->get()
+        return $questions->load(['topic:id,name,slug'])
             ->map(function ($question) use ($query) {
                 return [
-                    ...$question->only(['id', 'title', 'slug', 'tag']),
-                    'topic' => $question->topic->only(['name', 'slug']),
-                    'excerpt' => $this->getExcerpt($question->content, $query, 200),
+                    ...$question->toSearchableArray(),
+                    'topic' => $question->topic,
+                    'excerpt' => $this->getExcerpt($question->content, $query, 200)
                 ];
             });
     }
@@ -75,11 +73,11 @@ class SearchRepository
 
         // Add ellipsis if we're not at content boundaries
         if ($start > 0) {
-            $excerpt = '...' . $excerpt;
+            $excerpt = "...$excerpt";
         }
 
         if ($end < mb_strlen($content)) {
-            $excerpt = $excerpt . '...';
+            $excerpt = "$excerpt...";
         }
 
         return $excerpt;

@@ -34,32 +34,13 @@ class Question extends Model
         return $this->hasMany(AnswerNote::class);
     }
 
-    public function userNotes(): HasMany
-    {
-        return $this->hasMany(AnswerNote::class)->where('user_id', auth()->id());
-    }
-
     public function toSearchableArray(): array
     {
         return [
-            'id' => $this->id,
             'title' => $this->title,
             'content' => $this->content,
-            'tag' => $this->tag,
-            'topic_id' => $this->topic_id,
-        ];
-    }
-
-    public function toSearchableArrayWithRelations(): array
-    {
-        return [
-            'id' => $this->id,
-            'title' => $this->title,
-            'content' => $this->content,
-            'tag' => $this->tag,
-            'topic_id' => $this->topic_id,
-            'topic_name' => $this->topic?->name,
-            'topic_slug' => $this->topic?->slug,
+            'slug' => $this->slug,
+            'tag' => $this->tag
         ];
     }
 

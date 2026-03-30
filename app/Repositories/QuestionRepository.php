@@ -12,6 +12,11 @@ class QuestionRepository
         return Question::with('topic')->where('slug', $slug)->firstOrFail();
     }
 
+    public function search(string $query): Collection
+    {
+        return Question::search($query)->get();
+    }
+
     public function getNeighbors(Question $question): array
     {
         $next = Question::select('slug', 'title')
