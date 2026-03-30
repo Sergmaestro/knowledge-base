@@ -2,28 +2,24 @@
 
 namespace App\Http\Controllers;
 
+use App\Repositories\QuestionRepository;
 use App\Repositories\TopicRepository;
+use Illuminate\Http\Request;
 use Inertia\Inertia;
 
 class BookmarksPageController extends Controller
 {
     public function __construct(
-        private readonly TopicRepository $topicRepository
-    ) {}
-
-    public function index()
+        private readonly TopicRepository $topicRepository,
+        private readonly QuestionRepository $questionRepository,
+    )
     {
-        $bookmarks = auth()->user()
-            ->bookmarks()
-            ->with(['question' => function ($query) {
-                $query->with('topic:id,name,slug');
-            }])
-            ->get()
-            ->pluck('question')
-            ->filter();
+    }
 
+    public function index(Request $request)
+    {
         return Inertia::render('Bookmarks', [
-            'bookmarks' => $bookmarks,
+            'bookmarks' => $this->questionRepository->getBookmarkedQuestions($request->user()->id),
             'topics' => $this->topicRepository->getAllWithProgress(),
         ]);
     }

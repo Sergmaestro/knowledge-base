@@ -3,6 +3,7 @@
 namespace App\Repositories;
 
 use App\Models\Question;
+use Illuminate\Support\Collection;
 
 class QuestionRepository
 {
@@ -38,5 +39,16 @@ class QuestionRepository
             ['slug'],
             ['topic_id', 'title', 'content', 'order_index', 'updated_at']
         );
+    }
+
+    public function getBookmarkedQuestions(int $userId): Collection
+    {
+        return Question::select([
+            'questions.id', 'questions.title', 'questions.slug', 'questions.topic_id'
+        ])
+            ->with(['topic:id,name'])
+            ->join('bookmarks', 'bookmarks.question_id', '=', 'questions.id')
+            ->where('bookmarks.user_id', $userId)
+            ->get();
     }
 }
