@@ -27,14 +27,6 @@ class BookmarkRepository
         return true;
     }
 
-    public function getUserBookmarks(int $userId): Collection
-    {
-        return Bookmark::whereUserId($userId)
-            ->with('question:id,topic_id,title,slug')
-            ->get()
-            ->pluck('question');
-    }
-
     public function exists(int $questionId, int $userId): bool
     {
         return Bookmark::whereUserId($userId)

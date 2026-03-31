@@ -172,7 +172,7 @@ DB_PASSWORD=kb_pass
 | GET | /question/{slug} | Question detail |
 | GET | /search?q=query | Search questions |
 | POST | /progress/toggle | Toggle completion (auth) |
-| POST | /bookmark/toggle | Toggle bookmark (auth) |
+| POST | /bookmarks/toggle | Toggle bookmark (auth) |
 
 ## Authentication
 

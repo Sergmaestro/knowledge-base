@@ -63,7 +63,7 @@ const props = defineProps({
 })
 
 const removeBookmark = (questionId) => {
-    axios.post('/bookmark/toggle', {question_id: questionId})
+    axios.post('/bookmarks/toggle', {question_id: questionId})
         .then(() => router.reload())
         .catch(() => window.dispatchEvent(new CustomEvent('show-toast', { detail: { message: 'Failed to toggle bookmark' } })))
 }

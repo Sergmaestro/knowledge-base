@@ -17,16 +17,27 @@ Route::get('/question/{slug}', [QuestionController::class, 'show'])->name('quest
 Route::get('/search', [SearchController::class, 'search'])->name('search');
 
 Route::middleware('auth')->group(function () {
-    Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
-    Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
-    Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
-    Route::get('/bookmarks', [BookmarksPageController::class, 'index'])->name('bookmarks');
-    Route::post('/progress/toggle', [ProgressController::class, 'toggle'])->name('progress.toggle');
-    Route::get('/progress', [ProgressController::class, 'index'])->name('progress.index');
-    Route::post('/bookmark/toggle', [BookmarkController::class, 'toggle'])->name('bookmark.toggle');
-    Route::post('/notes', [AnswerNoteController::class, 'store'])->name('notes.store');
-    Route::patch('/notes/{note}', [AnswerNoteController::class, 'update'])->name('notes.update');
-    Route::delete('/notes/{note}', [AnswerNoteController::class, 'destroy'])->name('notes.destroy');
+    Route::group(['prefix' => 'profile', 'as' => 'profile.'], function () {
+        Route::get('/', [ProfileController::class, 'edit'])->name('edit');
+        Route::patch('/', [ProfileController::class, 'update'])->name('update');
+        Route::delete('/', [ProfileController::class, 'destroy'])->name('destroy');
+    });
+
+    Route::group(['prefix' => 'progress', 'as' => 'progress.'], function () {
+        Route::get('/', [ProgressController::class, 'index'])->name('index');
+        Route::post('/toggle', [ProgressController::class, 'toggle'])->name('toggle');
+    });
+
+    Route::group(['prefix' => 'bookmarks', 'as' => 'bookmarks.'], function () {
+        Route::get('/', [BookmarkController::class, 'index'])->name('index');
+        Route::post('/toggle', [BookmarkController::class, 'toggle'])->name('toggle');
+    });
+
+    Route::group(['prefix' => 'notes', 'as' => 'notes.'], function () {
+        Route::post('/', [AnswerNoteController::class, 'store'])->name('store');
+        Route::patch('/{note}', [AnswerNoteController::class, 'update'])->name('update');
+        Route::delete('/{note}', [AnswerNoteController::class, 'destroy'])->name('destroy');
+    });
 });
 
 require __DIR__.'/auth.php';

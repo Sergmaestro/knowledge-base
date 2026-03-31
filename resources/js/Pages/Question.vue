@@ -221,7 +221,7 @@ const toggleProgress = () => {
 }
 
 const toggleBookmark = () => {
-    axios.post('/bookmark/toggle', {question_id: props.question.id})
+    axios.post('/bookmarks/toggle', {question_id: props.question.id})
         .then(() => router.reload())
         .catch(() => window.dispatchEvent(new CustomEvent('show-toast', {detail: {message: 'Failed to toggle bookmark'}})))
 }
