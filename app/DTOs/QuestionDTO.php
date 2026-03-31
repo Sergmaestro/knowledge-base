@@ -3,6 +3,7 @@
 namespace App\DTOs;
 
 use App\Models\Question;
+use Illuminate\Support\Collection;
 
 readonly class QuestionDTO
 {
@@ -16,7 +17,7 @@ readonly class QuestionDTO
         public array $navigation, // prev/next
         public bool $is_completed,
         public bool $is_bookmarked,
-        public array $notes,
+        public Collection $notes,
     ) {}
 
     public static function fromModel(Question $question, array $extra): self
@@ -34,7 +35,7 @@ readonly class QuestionDTO
             navigation: $extra['navigation'],
             is_completed: $extra['is_completed'] ?? false,
             is_bookmarked: $extra['is_bookmarked'] ?? false,
-            notes: $extra['notes'] ?? [],
+            notes: $extra['notes'] ?? collect(),
         );
     }
 }

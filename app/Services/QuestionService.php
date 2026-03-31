@@ -5,20 +5,24 @@ namespace App\Services;
 use App\DTOs\QuestionDTO;
 use App\Models\Topic;
 use App\Models\User;
+use App\Repositories\AnswerNoteRepository;
+use App\Repositories\BookmarkRepository;
 use App\Repositories\QuestionRepository;
 use App\Repositories\UserProgressRepository;
 use Illuminate\Support\Collection;
 
-class QuestionService
+readonly class QuestionService
 {
     public function __construct(
-        private readonly QuestionRepository     $repository,
-        private readonly UserProgressRepository $progressRepository
+        private QuestionRepository     $repository,
+        private UserProgressRepository $progressRepository,
+        private BookmarkRepository     $bookmarkRepository,
+        private AnswerNoteRepository   $noteRepository
     )
     {
     }
 
-    public function getQuestionForUser(string $slug, ?User $user): QuestionDTO
+    public function getQuestionForUser(string $slug, ?int $userId): QuestionDTO
     {
         $question = $this->repository->findBySlug($slug);
         $navigation = $this->repository->getNeighbors($question);
@@ -30,19 +34,10 @@ class QuestionService
             'notes' => [],
         ];
 
-        if ($user) {
-            $userData['is_completed'] = $user->progress()
-                ->where('question_id', $question->id)
-                ->value('completed') ?? false;
-
-            $userData['is_bookmarked'] = $user->bookmarks()
-                ->where('question_id', $question->id)
-                ->exists();
-
-            $userData['notes'] = $user->notes()
-                ->where('question_id', $question->id)
-                ->get(['id', 'note', 'created_at'])
-                ->toArray();
+        if ($userId) {
+            $userData['is_completed'] = $this->progressRepository->getCompletedForQuestion($question->id, $userId) ?? false;
+            $userData['is_bookmarked'] = $this->bookmarkRepository->exists($question->id, $userId);
+            $userData['notes'] = $this->noteRepository->getForQuestion($question->id, $userId);
         }
 
         return QuestionDTO::fromModel($question, $userData);
@@ -58,6 +53,7 @@ class QuestionService
 
         return $topic->questions->map(function ($question) use ($progressByQuestion) {
             $question->is_completed = $progressByQuestion[$question->id] ?? false;
+
             return $question;
         });
     }

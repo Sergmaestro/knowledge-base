@@ -5,9 +5,9 @@ namespace App\Services;
 use App\Repositories\QuestionRepository;
 use Illuminate\Support\Collection;
 
-class SearchService
+readonly class SearchService
 {
-    public function __construct(private readonly QuestionRepository $questionRepository)
+    public function __construct(private QuestionRepository $questionRepository)
     {
     }
 

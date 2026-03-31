@@ -3,6 +3,7 @@
 namespace App\Repositories;
 
 use App\Models\AnswerNote;
+use Illuminate\Support\Collection;
 
 class AnswerNoteRepository
 {
@@ -10,7 +11,7 @@ class AnswerNoteRepository
     {
         return AnswerNote::create([
             'user_id' => $userId,
-            ...$noteData
+            ...$noteData,
         ]);
     }
 
@@ -22,5 +23,15 @@ class AnswerNoteRepository
     public function delete(AnswerNote $note): void
     {
         $note->delete();
+    }
+
+    public function getForQuestion(int $questionId, int $userId): Collection
+    {
+        return AnswerNote::select(['id', 'note', 'created_at'])
+            ->where([
+                'user_id' => $userId,
+                'question_id' => $questionId
+            ])
+            ->get();
     }
 }

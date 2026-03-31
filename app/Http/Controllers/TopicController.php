@@ -20,7 +20,6 @@ class TopicController extends Controller
     {
         $userId = $request->user()?->id;
         $topic = $this->topicRepository->findBySlug($slug);
-
         $questions = $this->questionService->getAllByTopicWithProgress($topic, $userId);
         $progress = $this->questionService->getProgressStats($questions, $userId);
 

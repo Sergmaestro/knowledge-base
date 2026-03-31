@@ -34,4 +34,11 @@ class BookmarkRepository
             ->get()
             ->pluck('question');
     }
+
+    public function exists(int $questionId, int $userId): bool
+    {
+        return Bookmark::whereUserId($userId)
+            ->where('question_id', $questionId)
+            ->exists();
+    }
 }

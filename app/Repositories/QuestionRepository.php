@@ -9,7 +9,9 @@ class QuestionRepository
 {
     public function findBySlug(string $slug): Question
     {
-        return Question::with('topic')->where('slug', $slug)->firstOrFail();
+        return Question::with('topic')
+            ->where('slug', $slug)
+            ->firstOrFail();
     }
 
     public function search(string $query): Collection

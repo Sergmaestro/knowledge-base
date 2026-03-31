@@ -7,12 +7,12 @@ use Illuminate\Support\Collection;
 
 class UserProgressRepository
 {
-    public function getUserProgress(?int $userId): Collection
+    public function getUserProgress(int $userId): Collection
     {
         return UserProgress::query()
             ->where([
                 'user_id' => $userId,
-                'completed' => true
+                'completed' => true,
             ])
             ->with('question:id,topic_id')
             ->get();
@@ -25,5 +25,13 @@ class UserProgressRepository
             ->whereIn('question_id', $questionIds)
             ->pluck('completed', 'question_id')
             ->toArray();
+    }
+
+    public function getCompletedForQuestion(int $questionId, int $userId): ?bool
+    {
+        return UserProgress::query()
+            ->where('user_id', $userId)
+            ->where('question_id', $questionId)
+            ->value('completed');
     }
 }

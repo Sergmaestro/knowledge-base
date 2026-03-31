@@ -17,13 +17,13 @@ class QuestionController extends Controller
 
     public function show(string $slug, Request $request): Response
     {
-        $authUser = $request->user();
+        $authUserId = $request->user()?->id;
 
         return Inertia::render(
             'Question',
             [
-                'question' => $this->questionService->getQuestionForUser($slug, $authUser),
-                'topics' => $this->topicService->getAllWithProgress($authUser?->id),
+                'question' => $this->questionService->getQuestionForUser($slug, $authUserId),
+                'topics' => $this->topicService->getAllWithProgress($authUserId),
             ]
         );
     }

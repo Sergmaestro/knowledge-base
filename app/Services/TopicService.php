@@ -2,16 +2,15 @@
 
 namespace App\Services;
 
-use App\Models\UserProgress;
 use App\Repositories\TopicRepository;
 use App\Repositories\UserProgressRepository;
 use Illuminate\Support\Collection;
 
-class TopicService
+readonly class TopicService
 {
     public function __construct(
-        private readonly UserProgressRepository $userProgressRepository,
-        private readonly TopicRepository $topicRepository
+        private UserProgressRepository $userProgressRepository,
+        private TopicRepository        $topicRepository
     )
     {
     }
