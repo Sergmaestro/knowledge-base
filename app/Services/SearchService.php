@@ -2,14 +2,13 @@
 
 namespace App\Services;
 
+use App\DTOs\SearchResultDTO;
 use App\Repositories\QuestionRepository;
 use Illuminate\Support\Collection;
 
 readonly class SearchService
 {
-    public function __construct(private QuestionRepository $questionRepository)
-    {
-    }
+    public function __construct(private QuestionRepository $questionRepository) {}
 
     public function search(string $query): Collection
     {
@@ -17,28 +16,23 @@ readonly class SearchService
             return collect();
         }
 
-        // Laravel Scout search
         $questions = $this->questionRepository->search($query);
 
         return $questions->load(['topic:id,name,slug'])
             ->map(function ($question) use ($query) {
-                return [
-                    ...$question->toSearchableArray(),
-                    'topic' => $question->topic,
-                    'excerpt' => $this->getExcerpt($question->content, $query, 200)
-                ];
+                $excerpt = $this->getExcerpt($question->content, $query);
+
+                return SearchResultDTO::fromQuestion($question, $excerpt);
             });
     }
 
     private function getExcerpt(string $content, string $query, int $length = 200): string
     {
-        // Clean content: remove HTML tags, normalize whitespace
         $content = strip_tags($content);
         $content = preg_replace('/\s+/', ' ', $content);
         $content = trim($content);
 
-        // Ensure UTF-8 encoding
-        if (!mb_check_encoding($content, 'UTF-8')) {
+        if (! mb_check_encoding($content, 'UTF-8')) {
             $content = mb_convert_encoding($content, 'UTF-8', 'ISO-8859-1');
         }
 
@@ -53,7 +47,7 @@ readonly class SearchService
                 return $content;
             }
 
-            return mb_substr($content, 0, $length) . '...';
+            return mb_substr($content, 0, $length).'...';
         }
 
         // Match found - center excerpt around the match position
@@ -68,10 +62,8 @@ readonly class SearchService
             $start = max(0, $end - $length);
         }
 
-        // Extract the excerpt slice
         $excerpt = mb_substr($content, $start, $end - $start);
 
-        // Add ellipsis if we're not at content boundaries
         if ($start > 0) {
             $excerpt = "...$excerpt";
         }

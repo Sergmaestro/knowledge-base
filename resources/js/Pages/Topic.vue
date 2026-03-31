@@ -12,18 +12,18 @@
                 </div>
 
                 <!-- Progress Bar -->
-                <div v-if="progress" class="mt-6">
+                <div v-if="topic.progress" class="mt-6">
                     <div class="flex items-center justify-between text-sm mb-2">
                         <span class="text-gray-600">Progress</span>
                         <span class="font-medium"
-                              :class="progress.completed === progress.total ? 'text-green-600' : 'text-gray-900'">
-                            {{ progress.completed }} / {{ progress.total }} completed
+                              :class="topic.progress.completed === topic.progress.total ? 'text-green-600' : 'text-gray-900'">
+                            {{ topic.progress.completed }} / {{ topic.progress.total }} completed
                         </span>
                     </div>
                     <div class="w-full bg-gray-200 rounded-full h-3">
                         <div
                             class="bg-indigo-600 h-3 rounded-full transition-all duration-500"
-                            :style="{ width: `${(progress.completed / progress.total) * 100}%` }"></div>
+                            :style="{ width: `${(topic.progress.completed / topic.progress.total) * 100}%` }"></div>
                     </div>
                 </div>
             </div>
@@ -31,10 +31,11 @@
             <!-- Questions List -->
             <div class="space-y-4">
                 <Link
-                    v-for="question in questions"
+                    v-if="topic.questions.length"
+                    v-for="question in topic.questions"
                     :key="question.id"
                     :href="`/question/${question.slug}`"
-                    class="block bg-white rounded-lg shadow-sm hover:shadow-md transition p-4"
+                    class="block bg-white rounded-lg shaArraydow-sm hover:shadow-md transition p-4"
                 >
                     <div class="flex items-center justify-between">
                         <div class="flex items-center space-x-3">
@@ -78,7 +79,7 @@
             </div>
 
             <!-- Empty State -->
-            <div v-if="questions.length === 0" class="text-center py-12">
+            <div v-if="topic.questions.length === 0" class="text-center py-12">
                 <p class="text-gray-500">No questions in this topic yet.</p>
             </div>
         </div>
@@ -93,11 +94,6 @@ import Tag from '@/Components/Tag.vue'
 
 const props = defineProps({
     topic: Object,
-    questions: {
-        type: Array,
-        default: () => [],
-    },
-    progress: Object,
     topics: {
         type: Array,
         default: () => [],
