@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use App\Repositories\TopicRepository;
 use App\Services\QuestionService;
+use App\Services\TopicService;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -12,21 +12,18 @@ class QuestionController extends Controller
 {
     public function __construct(
         private readonly QuestionService $questionService,
-        private readonly TopicRepository $topicRepository
+        private readonly TopicService $topicService
     ) {}
 
     public function show(string $slug, Request $request): Response
     {
-        $questionDTO = $this->questionService->getQuestionForUser(
-            $slug,
-            $request->user()
-        );
+        $authUser = $request->user();
 
         return Inertia::render(
             'Question',
             [
-                'question' => $questionDTO,
-                'topics' => $this->topicRepository->getAllWithProgress(),
+                'question' => $this->questionService->getQuestionForUser($slug, $authUser),
+                'topics' => $this->topicService->getAllWithProgress($authUser?->id),
             ]
         );
     }

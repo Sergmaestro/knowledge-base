@@ -9,35 +9,11 @@ use Illuminate\Support\Facades\Auth;
 
 class TopicRepository
 {
-    public function getAllWithProgress(): Collection
+    public function getOrderedByIndex(): Collection
     {
-        $topics = Topic::withCount('questions')
+        return Topic::withCount('questions')
             ->orderBy('order_index')
             ->get();
-
-        $progressByTopic = [];
-        if (Auth::check()) {
-            $progressByTopic = UserProgress::query()
-                ->where('user_id', Auth::id())
-                ->where('completed', true)
-                ->whereHas('question')
-                ->with('question:id,topic_id')
-                ->get()
-                ->groupBy(fn ($progress) => $progress->question->topic_id)
-                ->map(fn ($progress) => $progress->count())
-                ->toArray();
-        }
-
-        return $topics->map(function ($topic) use ($progressByTopic) {
-            $data = $topic->toArray();
-            $data['questions_count'] = $topic->questions_count;
-            $data['progress'] = $topic->questions_count > 0 && $progressByTopic ? [
-                'completed' => $progressByTopic[$topic->id] ?? 0,
-                'total' => $topic->questions_count,
-            ] : null;
-
-            return $data;
-        });
     }
 
     public function findBySlug(string $slug): Topic
@@ -45,41 +21,6 @@ class TopicRepository
         return Topic::where('slug', $slug)
             ->with(['questions:id,topic_id,title,slug,tag,order_index'])
             ->firstOrFail();
-    }
-
-    public function getQuestionsWithProgress(Topic $topic): Collection
-    {
-        $questionIds = $topic->questions->pluck('id');
-        $progressByQuestion = [];
-
-        if (Auth::check()) {
-            $progressByQuestion = UserProgress::query()
-                ->where('user_id', Auth::id())
-                ->whereIn('question_id', $questionIds)
-                ->pluck('completed', 'question_id')
-                ->toArray();
-        }
-
-        return $topic->questions->map(function ($question) use ($progressByQuestion) {
-            $question->is_completed = $progressByQuestion[$question->id] ?? false;
-
-            return $question;
-        });
-    }
-
-    public function getProgressStats(Collection $questions): ?array
-    {
-        if (! Auth::check()) {
-            return null;
-        }
-
-        $completed = $questions->where('is_completed', true)->count();
-        $total = $questions->count();
-
-        return [
-            'completed' => $completed,
-            'total' => $total,
-        ];
     }
 
     public function upsert(array $data): void
