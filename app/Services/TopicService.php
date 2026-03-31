@@ -39,7 +39,11 @@ readonly class TopicService
         });
     }
 
-    public function getTopicForUser(string $slug, ?int $userId): TopicDTO
+    public function getTopicForUser(
+        string $slug,
+        ?int $userId,
+        ?array $progressData
+    ): TopicDTO
     {
         $topic = $this->topicRepository->findBySlug($slug);
         $progressByQuestion = [];
@@ -63,18 +67,7 @@ readonly class TopicService
         return TopicDTO::fromModel(
             $topic,
             $questionsData->toArray(),
-            $this->getProgressData($questionsData, $userId)
+            $progressData
         );
-    }
-
-    private function getProgressData(Collection $questionsData, ?int $userId): ?array
-    {
-        if (!$userId) {
-            return null;
-        }
-        return [
-            'completed' => $questionsData->where('is_completed', true)->count(),
-            'total' => $questionsData->count(),
-        ];
     }
 }

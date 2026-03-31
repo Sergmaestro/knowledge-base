@@ -3,13 +3,10 @@
 namespace App\Services;
 
 use App\DTOs\QuestionDTO;
-use App\Models\Topic;
-use App\Models\User;
 use App\Repositories\AnswerNoteRepository;
 use App\Repositories\BookmarkRepository;
 use App\Repositories\QuestionRepository;
 use App\Repositories\UserProgressRepository;
-use Illuminate\Support\Collection;
 
 readonly class QuestionService
 {
@@ -25,13 +22,12 @@ readonly class QuestionService
     public function getQuestionForUser(string $slug, ?int $userId): QuestionDTO
     {
         $question = $this->repository->findBySlug($slug);
-        $navigation = $this->repository->getNeighbors($question);
 
         $userData = [
-            'navigation' => $navigation,
+            'navigation' => $this->repository->getNeighbors($question),
             'is_completed' => false,
             'is_bookmarked' => false,
-            'notes' => [],
+            'notes' => collect(),
         ];
 
         if ($userId) {
@@ -41,32 +37,5 @@ readonly class QuestionService
         }
 
         return QuestionDTO::fromModel($question, $userData);
-    }
-
-    public function getAllByTopicWithProgress(Topic $topic, ?int $userId): Collection
-    {
-        $progressByQuestion = [];
-        if ($userId) {
-            $questionIds = $topic->questions->pluck('id');
-            $progressByQuestion = $this->progressRepository->getUserProgressByQuestion($questionIds, $userId);
-        }
-
-        return $topic->questions->map(function ($question) use ($progressByQuestion) {
-            $question->is_completed = $progressByQuestion[$question->id] ?? false;
-
-            return $question;
-        });
-    }
-
-    public function getProgressStats(Collection $questions, ?int $userId): ?array
-    {
-        if (!$userId) {
-            return null;
-        }
-
-        return [
-            'completed' => $questions->where('is_completed', true)->count(),
-            'total' => $questions->count(),
-        ];
     }
 }

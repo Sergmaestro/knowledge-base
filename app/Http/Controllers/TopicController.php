@@ -16,11 +16,13 @@ class TopicController extends Controller
     public function show(string $slug, Request $request): Response
     {
         $userId = $request->user()?->id;
-        $topic = $this->topicService->getTopicForUser($slug, $userId);
+        $topics = $this->topicService->getAllWithProgress($userId);
+        $progressData = $topics->where('slug', $slug)->first()['progress'];
+        $topic = $this->topicService->getTopicForUser($slug, $userId, $progressData);
 
         return Inertia::render('Topic', [
             'topic' => $topic,
-            'topics' => $this->topicService->getAllWithProgress($userId),
+            'topics' => $topics,
         ]);
     }
 }
