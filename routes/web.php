@@ -24,7 +24,6 @@ Route::middleware('auth')->group(function () {
     });
 
     Route::group(['prefix' => 'progress', 'as' => 'progress.'], function () {
-        Route::get('/', [ProgressController::class, 'index'])->name('index');
         Route::post('/toggle', [ProgressController::class, 'toggle'])->name('toggle');
     });
 

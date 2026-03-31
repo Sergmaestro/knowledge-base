@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Services\TopicService;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
+use Inertia\Response;
 
 class TopicController extends Controller
 {
@@ -12,7 +13,7 @@ class TopicController extends Controller
         private readonly TopicService $topicService
     ) {}
 
-    public function show(string $slug, Request $request)
+    public function show(string $slug, Request $request): Response
     {
         $userId = $request->user()?->id;
         $topic = $this->topicService->getTopicForUser($slug, $userId);

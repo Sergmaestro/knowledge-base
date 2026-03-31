@@ -34,4 +34,30 @@ class UserProgressRepository
             ->where('question_id', $questionId)
             ->value('completed');
     }
+
+    public function toggle(int $questionId, int $userId): bool
+    {
+        $progress = UserProgress::whereUserId($userId)
+            ->where('question_id', $questionId)
+            ->first();
+
+        if ($progress) {
+            $isCompleted = !$progress->completed;
+            $progress->update([
+                'completed' => $isCompleted,
+                'completed_at' => $isCompleted ? now() : null,
+            ]);
+
+            return $isCompleted;
+        }
+
+        UserProgress::create([
+            'user_id' => $userId,
+            'question_id' => $questionId,
+            'completed' => true,
+            'completed_at' => now(),
+        ]);
+
+        return true;
+    }
 }
