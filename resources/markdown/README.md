@@ -46,7 +46,7 @@ A comprehensive Q&A knowledge base for Senior Software Engineer interviews focus
 ### System Design
 - **[API Design](System-Design/api-design.md)** - REST API design, versioning, REST vs GraphQL, backward compatibility
 - **[Design Patterns](System-Design/design-patterns.md)** - OOP design patterns with Laravel examples (Singleton, Factory, Repository, Strategy, Observer, etc.)
-- **[Architecture](System-Design/architecture.md)** - Architectural patterns, microservices, CQRS, event-driven design
+- **[Architecture](System-Design/architecture.md)** - Architectural patterns, microservices, CQRS, event-driven design, **Domain-Driven Design (DDD)**
 - **[Scalability](System-Design/scalability.md)** - Caching strategies, queues, load balancing, horizontal scaling, Apache Kafka, message brokers
 
 ### Behavioral

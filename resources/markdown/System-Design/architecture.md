@@ -921,6 +921,466 @@ class OrderController
 
 ---
 
+## Question 17: Explain Domain-Driven Design (DDD) core concepts and implementation.
+
+**Answer:**
+
+### What is DDD?
+
+Domain-Driven Design is an approach to software development that emphasizes collaboration between technical and domain experts to create a shared model of the business domain. Rather than focusing on technical structures, DDD centers on understanding the problem space—the business domain—and aligning code structure with business concepts.
+
+### Why Use DDD?
+
+| Problem | DDD Solution |
+|---------|--------------|
+| Complex business logic scattered across the codebase | Encapsulate logic within domain objects |
+| Miscommunication between developers and domain experts | Shared Ubiquitous Language |
+| Anemic domain models (data only, no behavior) | Rich domain models with behavior |
+| Tight coupling to infrastructure | Clean separation via Aggregates and Repositories |
+| Difficulty scaling complex domains | Bounded Contexts isolate subdomains |
+
+### When to Use DDD? DDD vs Simpler Models?
+
+- **Complex business domains** with evolving requirements
+- **Large teams** needing clear domain boundaries
+- **Systems where domain logic is a competitive advantage**
+- **Microservices architecture** (each service as a bounded context)
+
+**Not recommended for:** Simple CRUD applications, data-centric systems with minimal business logic.
+
+**DDD vs Simpler Domain Models:**
+- **Transaction Script**: Direct procedural code for simple operations (great for simple forms, APIs)
+- **Table Module**: Single class per table, organizes logic around database structure
+- **Domain Model**: Rich objects with behavior—use DDD when business rules are complex and change frequently
+
+### Identifying Bounded Contexts
+
+1. **Domain Expert Input**: Talk to business stakeholders about naturally separate areas
+2. **Semantic Clues**: Different terms for the same concept indicate different contexts
+3. **Change Patterns**: Things that change together stay in same context
+4. **Team Structure**: Conway's Law—teams often map to bounded contexts
+5. **Technology Boundaries**: Different databases, APIs, or deployment cycles suggest boundaries
+
+Example signals:
+- "Product" means different things in Catalog (SKU, pricing) vs Shipping (weight, dimensions)
+- Accounting vs Inventory—both use "invoice" but differently
+- Different teams own different business capabilities
+
+### Trade-offs of DDD
+
+| Trade-off | Impact |
+|-----------|--------|
+| Initial complexity | More classes, more abstraction—worth it for complex domains |
+| Learning curve | Team needs to understand DDD concepts |
+| Over-engineering risk | Don't apply DDD to simple domains |
+| Performance | Domain objects may be less performant than raw queries initially |
+| Flexibility | Changing domain model is harder—design thoughtfully |
+
+### Core DDD Concepts
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    Bounded Context                          │
+│  ┌───────────────────────────────────────────────────────┐  │
+│  │                    Domain                              │  │
+│  │  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐   │  │
+│  │  │  Entities   │  │Value Objects│  │  Aggregates │   │  │
+│  │  └─────────────┘  └─────────────┘  └─────────────┘   │  │
+│  │  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐   │  │
+│  │  │Domain Events│  │Domain Services│ │ Repositories│   │  │
+│  │  └─────────────┘  └─────────────┘  └─────────────┘   │  │
+│  └───────────────────────────────────────────────────────┘  │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### 1. Building Blocks
+
+#### Entities
+
+Objects with unique identity that persists through changes:
+
+```php
+// Entity - has identity that matters
+class Order extends Entity
+{
+    private OrderId $id;
+    private CustomerId $customerId;
+    private Money $total;
+    private OrderStatus $status;
+
+    public functionId(): OrderId
+    {
+        return $this->id;
+    }
+
+    public function changeStatus(OrderStatus $newStatus): void
+    {
+        if (!$this->canTransitionTo($newStatus)) {
+            throw new InvalidTransitionException($this->status, $newStatus);
+        }
+        $this->status = $newStatus;
+        $this->recordDomainEvent(new OrderStatusChanged($this->id, $newStatus));
+    }
+}
+```
+
+#### Value Objects
+
+Immutable objects defined by their attributes, no identity:
+
+```php
+// Value Object - no identity, immutable
+readonly class Money
+{
+    public function __construct(
+        private int $amount,
+        private Currency $currency
+    ) {}
+
+    public function add(Money $other): Money
+    {
+        if ($this->currency !== $other->currency) {
+            throw new CurrencyMismatchException();
+        }
+        return new Money($this->amount + $other->amount, $this->currency);
+    }
+
+    public function multiply(int $multiplier): Money
+    {
+        return new Money($this->amount * $multiplier, $this->currency);
+    }
+}
+
+// Usage
+$price = new Money(1000, Currency::USD);
+$total = $price->multiply(3); // Returns new Money object
+```
+
+#### Aggregates
+
+Cluster of related entities and value objects with one root entity:
+
+```php
+// Aggregate Root - the only entry point
+class Order extends AggregateRoot
+{
+    private OrderId $id;
+    private CustomerId $customerId;
+    private array $items = [];
+    private OrderStatus $status;
+
+    public function addProduct(Product $product, int $quantity): void
+    {
+        if ($this->status !== OrderStatus::PENDING) {
+            throw new OrderAlreadyPlacedException();
+        }
+
+        $lineItem = new OrderLineItem(
+            LineItemId::generate(),
+            $product->id(),
+            $quantity,
+            $product->price()
+        );
+        $this->items[] = $lineItem;
+    }
+
+    public function place(): void
+    {
+        if (empty($this->items)) {
+            throw new EmptyOrderException();
+        }
+        $this->status = OrderStatus::PLACED;
+        $this->recordDomainEvent(new OrderPlaced($this->id, $this->customerId));
+    }
+}
+
+// Aggregate Root Base
+abstract class AggregateRoot
+{
+    private array $domainEvents = [];
+
+    protected function recordDomainEvent(DomainEvent $event): void
+    {
+        $this->domainEvents[] = $event;
+    }
+
+    public function pullDomainEvents(): array
+    {
+        $events = $this->domainEvents;
+        $this->domainEvents = [];
+        return $events;
+    }
+}
+```
+
+### 2. Bounded Contexts
+
+Logical boundaries where specific domain terminology applies:
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                     E-Commerce System                       │
+├─────────────────────────────────────────────────────────────┤
+│                                                             │
+│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐    │
+│  │   Catalog    │  │    Order     │  │   Shipping   │    │
+│  │   Context    │  │   Context    │  │   Context    │    │
+│  │              │  │              │  │              │    │
+│  │  - Product   │  │  - Order     │  │  - Shipment  │    │
+│  │  - SKU       │  │  - Cart      │  │  - Delivery  │    │
+│  │  - Inventory │  │  - Payment   │  │  - Tracking  │    │
+│  │              │  │              │  │              │    │
+│  └──────────────┘  └──────────────┘  └──────────────┘    │
+│        │                 │                  │              │
+│        └─────────────────┼──────────────────┘              │
+│                          │                                  │
+│                   ┌──────┴──────┐                          │
+│                   │   Integr    │                          │
+│                   │   Context   │                          │
+│                   └─────────────┘                          │
+└─────────────────────────────────────────────────────────────┘
+```
+
+Context Mapping:
+
+```php
+// Anti-Corruption Layer - protect your context from others
+class OrderContextAdapter
+{
+    public function __construct(
+        private CatalogClient $catalogClient,
+        private ShippingGateway $shippingGateway
+    ) {}
+
+    public function getProductDetails(ProductId $id): OrderProductDto
+    {
+        // Transform external format to internal format
+        $catalogProduct = $this->catalogClient->getProduct($id->value);
+        
+        return new OrderProductDto(
+            id: new ProductId($catalogProduct['sku']),
+            name: $catalogProduct['title'],
+            price: new Money($catalogProduct['unit_price'], Currency::USD)
+        );
+    }
+}
+```
+
+### 3. Domain Services
+
+Encapsulates domain logic that doesn't belong to entities/value objects:
+
+```php
+// Domain Service - stateless domain logic
+class PricingService
+{
+    public function calculateTotal(Order $order, ?Promotion $promotion): Money
+    {
+        $subtotal = array_reduce(
+            $order->lineItems(),
+            fn(Money $total, LineItem $item) => $total->add($item->subtotal()),
+            new Money(0, Currency::USD)
+        );
+
+        if ($promotion === null) {
+            return $subtotal;
+        }
+
+        $discount = $promotion->calculateDiscount($subtotal);
+        return $subtotal->subtract($discount);
+    }
+}
+```
+
+### 4. Domain Events
+
+Represent something significant that happened in the domain:
+
+```php
+// Domain Event
+readonly class OrderPlaced implements DomainEvent
+{
+    public function __construct(
+        public OrderId $orderId,
+        public CustomerId $customerId,
+        public DateTimeImmutable $occurredAt
+    ) {}
+}
+
+// Event Handler
+class SendOrderConfirmationHandler
+{
+    public function handle(OrderPlaced $event): void
+    {
+        $this->mailer->sendOrderConfirmation(
+            $event->customerId,
+            $event->orderId
+        );
+    }
+}
+
+// Event Dispatcher
+class EventDispatcher
+{
+    private array $handlers = [];
+
+    public function register(string $eventClass, callable $handler): void
+    {
+        $this->handlers[$eventClass][] = $handler;
+    }
+
+    public function dispatch(DomainEvent $event): void
+    {
+        $eventClass = get_class($event);
+        
+        foreach ($this->handlers[$eventClass] ?? [] as $handler) {
+            $handler($event);
+        }
+    }
+}
+```
+
+### 5. Repository Pattern
+
+Abstracts data access, works with aggregates:
+
+```php
+// Repository Interface (in Domain layer)
+interface OrderRepository
+{
+    public function findById(OrderId $id): ?Order;
+    public function save(Order $order): void;
+    public function findByCustomer(CustomerId $customerId): array;
+}
+
+// Repository Implementation (in Infrastructure layer)
+class EloquentOrderRepository implements OrderRepository
+{
+    public function findById(OrderId $id): ?Order
+    {
+        $order = OrderModel::with('items.product')->find($id->value);
+        
+        if ($order === null) {
+            return null;
+        }
+        
+        return $this->mapToAggregate($order);
+    }
+
+    public function save(Order $order): void
+    {
+        $orderModel = OrderModel::findOrNew($order->id()->value);
+        $orderModel->customer_id = $order->customerId()->value;
+        $orderModel->status = $order->status()->value;
+        $orderModel->save();
+
+        // Save items, handle domain events, etc.
+    }
+
+    private function mapToAggregate(OrderModel $model): Order
+    {
+        $order = new Order(
+            OrderId::fromString($model->id),
+            CustomerId::fromString($model->customer_id),
+            OrderStatus::from($model->status)
+        );
+        
+        foreach ($model->items as $item) {
+            $order->addItem(/* ... */);
+        }
+        
+        return $order;
+    }
+}
+```
+
+### Laravel Implementation Structure
+
+```
+app/
+├── Domain/
+│   ├── Entities/
+│   │   └── Order.php
+│   ├── ValueObjects/
+│   │   ├── Money.php
+│   │   └── OrderId.php
+│   ├── Aggregates/
+│   │   └── Order.php
+│   ├── Events/
+│   │   └── OrderPlaced.php
+│   ├── Services/
+│   │   └── PricingService.php
+│   └── Repositories/
+│       └── OrderRepository.php
+│
+├── Application/
+│   ├── Commands/
+│   │   └── PlaceOrderCommand.php
+│   ├── Queries/
+│   │   └── GetOrderQuery.php
+│   └── Services/
+│       └── OrderApplicationService.php
+│
+└── Infrastructure/
+    ├── Persistence/
+    │   └── EloquentOrderRepository.php
+    └── Messaging/
+        └── EventDispatcher.php
+```
+
+### Application Service (Orchestration)
+
+```php
+class OrderApplicationService
+{
+    public function __construct(
+        private OrderRepository $orderRepository,
+        private EventDispatcher $eventDispatcher,
+        private InventoryService $inventoryService,
+        private PaymentGateway $paymentGateway
+    ) {}
+
+    public function placeOrder(PlaceOrderCommand $command): OrderResult
+    {
+        $customer = $this->getCustomer($command->customerId);
+        
+        $order = Order::create(
+            customerId: $customer->id(),
+            items: $command->items
+        );
+
+        // Reserve inventory
+        foreach ($command->items as $item) {
+            $this->inventoryService->reserve($item->productId, $item->quantity);
+        }
+
+        // Process payment
+        $this->paymentGateway->charge($customer, $order->total());
+
+        // Persist
+        $this->orderRepository->save($order);
+
+        // Dispatch domain events
+        foreach ($order->pullDomainEvents() as $event) {
+            $this->eventDispatcher->dispatch($event);
+        }
+
+        return new OrderResult($order->id());
+    }
+}
+```
+
+**Key Points:**
+- Entities: Identity-based objects that persist through changes
+- Value Objects: Immutable, defined by attributes, no identity
+- Aggregates: Cluster with one root entity, boundary for consistency
+- Bounded Context: Logical boundary with specific domain language
+- Domain Events: Significant domain occurrences
+- Repository: Abstracts data access, works with aggregates
+- Domain Services: Stateless logic that doesn't fit entities
+
+---
+
 ## Notes
 
 Add more questions covering:
@@ -931,4 +1391,3 @@ Add more questions covering:
 - Load balancing strategies
 - Microservices communication (REST, gRPC, messaging)
 - Distributed transactions and saga pattern
-- Domain-Driven Design (DDD)
