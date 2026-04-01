@@ -16,6 +16,14 @@ services:
       timeout: 3s
       retries: 10
 
+  kb-redis:
+    image: redis:7-alpine
+    container_name: kb_redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - kb_redis_data:/data
+
   kb-app:
     build:
       context: .
@@ -29,9 +37,14 @@ services:
       - DB_DATABASE=knowledge_base
       - DB_USERNAME=kb_user
       - DB_PASSWORD=kb_pass
+      - REDIS_HOST=kb-redis
+      - REDIS_CLIENT=phpredis
+      - CACHE_DRIVER=redis
     depends_on:
       kb-database:
         condition: service_healthy
+      kb-redis:
+        condition: service_started
     volumes:
       - ./:/var/www/
     command: sh -c "
@@ -56,3 +69,4 @@ services:
 
 volumes:
   kb_database_data:
+  kb_redis_data:

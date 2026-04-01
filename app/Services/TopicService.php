@@ -11,18 +11,17 @@ readonly class TopicService
 {
     public function __construct(
         private UserProgressRepository $userProgressRepository,
-        private TopicRepository $topicRepository
-    ) {}
+        private TopicRepository        $topicRepository
+    )
+    {
+    }
 
     public function getAllWithProgress(?int $userId): Collection
     {
         $topics = $this->topicRepository->getOrderedByIndex();
         $progressByTopic = [];
         if ($userId) {
-            $progressByTopic = $this->userProgressRepository->getUserProgress($userId)
-                ->groupBy(fn ($progress) => $progress->question->topic_id)
-                ->map(fn ($progress) => $progress->count())
-                ->toArray();
+            $progressByTopic = $this->userProgressRepository->getUserProgressByTopic($userId);
         }
 
         return $topics->map(function ($topic) use ($progressByTopic) {
@@ -49,8 +48,7 @@ readonly class TopicService
         $progressByQuestion = [];
 
         if ($userId) {
-            $questionIds = $topic->questions->pluck('id');
-            $progressByQuestion = $this->userProgressRepository->getUserProgressByQuestion($questionIds, $userId);
+            $progressByQuestion = $this->userProgressRepository->getUserProgressByQuestion($userId);
         }
 
         $questionsData = $topic->questions->map(function ($question) use ($progressByQuestion) {

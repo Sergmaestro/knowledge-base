@@ -3,40 +3,66 @@
 namespace App\Repositories;
 
 use App\Models\UserProgress;
-use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Cache;
 
 class UserProgressRepository
 {
-    public function getUserProgress(int $userId): Collection
+    private const int CACHE_TTL = 3600;
+
+    private const string CACHE_TAG = 'user_progress';
+
+    /**
+     * User progress by topic
+     * returns an array where:
+     * key is `topic_id`
+     * value is the number of completed questions
+     */
+    public function getUserProgressByTopic(int $userId): array
     {
-        return UserProgress::query()
-            ->where([
-                'user_id' => $userId,
-                'completed' => true,
-            ])
-            ->with('question:id,topic_id')
-            ->get();
+        return Cache::tags([self::CACHE_TAG, (string) $userId])
+            ->remember('by_topic', self::CACHE_TTL, function () use ($userId) {
+                return UserProgress::selectRaw('questions.topic_id, COUNT(user_progress.id) as count')
+                    ->join('questions', 'questions.id', '=', 'user_progress.question_id')
+                    ->where('user_progress.user_id', $userId)
+                    ->where('user_progress.completed', true)
+                    ->groupBy('questions.topic_id')
+                    ->pluck('count', 'topic_id')
+                    ->toArray();
+            });
     }
 
-    public function getUserProgressByQuestion(Collection $questionIds, ?int $userId): array
+    /**
+     * User progress by question
+     * returns an array where:
+     * key is `question_id`
+     * value is `completed` boolean
+     */
+    public function getUserProgressByQuestion(?int $userId): array
     {
-        return UserProgress::query()
-            ->where('user_id', $userId)
-            ->whereIn('question_id', $questionIds)
-            ->pluck('completed', 'question_id')
-            ->toArray();
+        if (! $userId) {
+            return [];
+        }
+
+        return Cache::tags([self::CACHE_TAG, (string) $userId])
+            ->remember('by_questions', self::CACHE_TTL, function () use ($userId) {
+                return UserProgress::whereUserId($userId)
+                    ->pluck('completed', 'question_id')
+                    ->toArray();
+            });
     }
 
+    /**
+     * Check if the current question is completed (exists and completed in User Progress)
+     */
     public function getCompletedForQuestion(int $questionId, int $userId): ?bool
     {
-        return UserProgress::query()
-            ->where('user_id', $userId)
-            ->where('question_id', $questionId)
-            ->value('completed');
+        return $this->getUserProgressByQuestion($userId)[$questionId] ?? null;
     }
 
     public function toggle(int $questionId, int $userId): bool
     {
+        $this->invalidateCache($userId);
+
         $progress = UserProgress::whereUserId($userId)
             ->where('question_id', $questionId)
             ->first();
@@ -59,5 +85,10 @@ class UserProgressRepository
         ]);
 
         return true;
+    }
+
+    private function invalidateCache(int $userId): void
+    {
+        Cache::tags([self::CACHE_TAG, (string) $userId])->flush();
     }
 }
