@@ -8,7 +8,9 @@ use Illuminate\Support\Collection;
 
 readonly class SearchService
 {
-    public function __construct(private QuestionRepository $questionRepository) {}
+    public function __construct(private QuestionRepository $questionRepository)
+    {
+    }
 
     public function search(string $query): Collection
     {
@@ -32,7 +34,7 @@ readonly class SearchService
         $content = preg_replace('/\s+/', ' ', $content);
         $content = trim($content);
 
-        if (! mb_check_encoding($content, 'UTF-8')) {
+        if (!mb_check_encoding($content, 'UTF-8')) {
             $content = mb_convert_encoding($content, 'UTF-8', 'ISO-8859-1');
         }
 
@@ -47,7 +49,7 @@ readonly class SearchService
                 return $content;
             }
 
-            return mb_substr($content, 0, $length).'...';
+            return mb_substr($content, 0, $length) . '...';
         }
 
         // Match found - center excerpt around the match position

@@ -11,7 +11,9 @@ readonly class BookmarkService
     public function __construct(
         private BookmarkRepository $repository,
         private QuestionRepository $questionRepository,
-    ) {}
+    )
+    {
+    }
 
     public function toggle(int $questionId, int $userId): array
     {

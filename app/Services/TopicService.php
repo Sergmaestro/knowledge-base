@@ -11,7 +11,7 @@ readonly class TopicService
 {
     public function __construct(
         private UserProgressRepository $userProgressRepository,
-        private TopicRepository        $topicRepository
+        private TopicRepository $topicRepository
     )
     {
     }
@@ -40,7 +40,7 @@ readonly class TopicService
 
     public function getTopicForUser(
         string $slug,
-        ?int $userId,
+        ?int   $userId,
         ?array $progressData
     ): TopicDTO
     {

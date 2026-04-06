@@ -11,7 +11,14 @@
 
             <!-- Overall Progress -->
             <div v-if="overallProgress" class="bg-white rounded-lg shadow p-6">
-                <h2 class="text-lg font-medium text-gray-900 mb-4">Your Progress</h2>
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="text-lg font-medium text-gray-900">Your Progress</h2>
+                    <button
+                        @click="showResetDialog = true"
+                        class="text-sm text-red-600 hover:text-red-800">
+                        Reset progress
+                    </button>
+                </div>
                 <div class="w-full bg-gray-200 rounded-full h-4">
                     <div
                         class="bg-indigo-600 h-4 rounded-full transition-all duration-500"
@@ -34,7 +41,7 @@
                     <div class="flex items-center justify-between mb-4">
                         <div class="flex items-center gap-3">
                             <div class="flex-shrink-0">
-                                <Icon :name="topic.icon" class="w-6 h-6 text-indigo-600" />
+                                <Icon :name="topic.icon" class="w-6 h-6 text-indigo-600"/>
                             </div>
                             <h3 class="text-lg font-semibold text-gray-900">{{ topic.name }}</h3>
                         </div>
@@ -78,14 +85,24 @@
                 </p>
             </div>
         </div>
+
+        <ConfirmDialog
+            :show="showResetDialog"
+            title="Reset Progress"
+            message="Are you sure you want to reset all your progress? This action cannot be undone."
+            confirm-text="Reset"
+            @confirm="resetProgress"
+            @close="showResetDialog = false"
+        />
     </Layout>
 </template>
 
 <script setup>
 import Layout from '@/Layouts/AppLayout.vue'
-import {computed} from 'vue'
-import {Link} from "@inertiajs/vue3";
+import {computed, ref} from 'vue'
+import {Link, router, useForm} from "@inertiajs/vue3";
 import Icon from '@/Components/Icon.vue';
+import ConfirmDialog from '@/Components/ConfirmDialog.vue';
 
 const props = defineProps({
     topics: {
@@ -93,6 +110,17 @@ const props = defineProps({
         default: () => [],
     },
 })
+
+const showResetDialog = ref(false)
+const resetProgress = () => {
+    axios.post('/progress/reset')
+        .then(() => {
+            router.reload()
+        })
+        .catch(() => window.dispatchEvent(
+            new CustomEvent('show-toast', {detail: {message: 'Failed to reset progress'}})
+        ))
+}
 
 const overallProgress = computed(() => {
     const topicsWithProgress = props.topics.filter(t => t.progress)

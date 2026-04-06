@@ -87,6 +87,12 @@ class UserProgressRepository
         return true;
     }
 
+    public function reset(int $userId): void
+    {
+        $this->invalidateCache($userId);
+        UserProgress::whereUserId($userId)->delete();
+    }
+
     private function invalidateCache(int $userId): void
     {
         Cache::tags([self::CACHE_TAG, (string) $userId])->flush();

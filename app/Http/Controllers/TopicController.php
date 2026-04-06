@@ -11,7 +11,9 @@ class TopicController extends Controller
 {
     public function __construct(
         private readonly TopicService $topicService
-    ) {}
+    )
+    {
+    }
 
     public function show(string $slug, Request $request): Response
     {

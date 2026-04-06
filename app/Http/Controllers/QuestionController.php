@@ -12,8 +12,10 @@ class QuestionController extends Controller
 {
     public function __construct(
         private readonly QuestionService $questionService,
-        private readonly TopicService $topicService
-    ) {}
+        private readonly TopicService    $topicService
+    )
+    {
+    }
 
     public function show(string $slug, Request $request): Response
     {

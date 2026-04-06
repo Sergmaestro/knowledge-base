@@ -13,8 +13,10 @@ class BookmarkController extends Controller
 {
     public function __construct(
         private readonly BookmarkService $bookmarkService,
-        private readonly TopicService $topicService,
-    ) {}
+        private readonly TopicService    $topicService,
+    )
+    {
+    }
 
     public function toggle(ToggleBookmarkRequest $request): JsonResponse
     {

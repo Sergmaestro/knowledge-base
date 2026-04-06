@@ -2,7 +2,6 @@
 
 use App\Http\Controllers\AnswerNoteController;
 use App\Http\Controllers\BookmarkController;
-use App\Http\Controllers\BookmarksPageController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ProgressController;
@@ -25,6 +24,7 @@ Route::middleware('auth')->group(function () {
 
     Route::group(['prefix' => 'progress', 'as' => 'progress.'], function () {
         Route::post('/toggle', [ProgressController::class, 'toggle'])->name('toggle');
+        Route::post('/reset', [ProgressController::class, 'reset'])->name('reset');
     });
 
     Route::group(['prefix' => 'bookmarks', 'as' => 'bookmarks.'], function () {
