@@ -12,7 +12,7 @@
                         : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
                 ]">
                 <div class="flex items-center gap-2">
-                    <Icon :name="topic.icon" class="w-4 h-4 flex-shrink-0" />
+                    <Icon :name="topic.icon" class="w-6 h-6 flex-shrink-0" />
                     <span>{{ topic.name }}</span>
                 </div>
                 <span

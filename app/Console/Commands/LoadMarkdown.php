@@ -2,11 +2,16 @@
 
 namespace App\Console\Commands;
 
+use App\Models\AnswerNote;
+use App\Models\Bookmark;
 use App\Models\Question;
 use App\Models\Topic;
+use App\Models\UserProgress;
+use App\Repositories\UserProgressRepository;
 use App\Services\MarkdownLoader;
 use DB;
 use Illuminate\Console\Command;
+use Illuminate\Support\Facades\Cache;
 
 class LoadMarkdown extends Command
 {
@@ -27,6 +32,13 @@ class LoadMarkdown extends Command
             DB::connection()->getPdo()->exec('SET FOREIGN_KEY_CHECKS=0');
             Question::truncate();
             Topic::truncate();
+
+            // Reset all user-related data as it might be referenced to the wrong question
+            AnswerNote::truncate();
+            Bookmark::truncate();
+            UserProgress::truncate();
+            Cache::tags([UserProgressRepository::CACHE_TAG])->flush();
+
             DB::connection()->getPdo()->exec('SET FOREIGN_KEY_CHECKS=1');
         }
 

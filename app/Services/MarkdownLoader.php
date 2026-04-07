@@ -23,15 +23,16 @@ class MarkdownLoader
     ];
 
     private const array TOPIC_CONFIG = [
-        'PHP' => ['description' => 'PHP fundamentals, advanced topics, and best practices', 'icon' => 'code-bracket'],
-        'Laravel' => ['description' => 'Laravel framework, Eloquent, architecture, and testing', 'icon' => 'cube'],
-        'Vue' => ['description' => 'Vue.js fundamentals, composition API, and state management', 'icon' => 'eye'],
-        'Javascript' => ['description' => 'JavaScript fundamentals, ES6+, async patterns, and browser APIs', 'icon' => 'code-bracket'],
-        'Typescript' => ['description' => 'TypeScript type system, generics, decorators, and advanced patterns', 'icon' => 'code-bracket'],
+        'PHP' => ['description' => 'PHP fundamentals, advanced topics, and best practices', 'icon' => 'php'],
+        'Laravel' => ['description' => 'Laravel framework, Eloquent, architecture, and testing', 'icon' => 'laravel'],
+        'Vue' => ['description' => 'Vue.js fundamentals, composition API, and state management', 'icon' => 'vue'],
+        'Javascript' => ['description' => 'JavaScript fundamentals, ES6+, async patterns, and browser APIs', 'icon' => 'javascript'],
+        'Typescript' => ['description' => 'TypeScript type system, generics, decorators, and advanced patterns', 'icon' => 'typescript'],
         'Database' => ['description' => 'Database design, optimization, and advanced queries', 'icon' => 'server'],
-        'System-Design' => ['description' => 'System architecture, design patterns, and scalability', 'icon' => 'cube-transparent'],
+        'System-Design' => ['description' => 'System architecture, design patterns, and scalability', 'icon' => 'system-design'],
         'DevOps' => ['description' => 'DevOps practices, monitoring, and infrastructure', 'icon' => 'cloud'],
         'Behavioral' => ['description' => 'Behavioral interview questions and STAR method examples', 'icon' => 'chat-bubble-left-right'],
+        'Coding' => ['description' => 'LeetCode approaches, algorithms, and problem-solving patterns', 'icon' => 'coding'],
     ];
 
     private const array DEFAULT_TOPIC_CONFIG = ['description' => '', 'icon' => 'folder'];

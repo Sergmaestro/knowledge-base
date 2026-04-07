@@ -2,7 +2,7 @@
     <Layout :topics="topics">
         <div class="space-y-8">
             <!-- Hero Section -->
-            <div class="text-center py-8">
+            <div class="text-center py-4">
                 <h1 class="text-4xl font-bold text-gray-900 mb-4">Knowledge Base</h1>
                 <p class="text-lg text-gray-600 max-w-2xl mx-auto">
                     A comprehensive collection of interview questions and answers for senior software engineers.
@@ -38,18 +38,19 @@
                     :key="topic.slug"
                     :href="`/topic/${topic.slug}`"
                     class="bg-white rounded-lg shadow hover:shadow-md transition p-6">
-                    <div class="flex items-center justify-between mb-4">
-                        <div class="flex items-center gap-3">
-                            <div class="flex-shrink-0">
-                                <Icon :name="topic.icon" class="w-6 h-6 text-indigo-600"/>
-                            </div>
+                    <div class="flex items-center justify-between gap-3 mb-4">
+                        <div>
                             <h3 class="text-lg font-semibold text-gray-900">{{ topic.name }}</h3>
+                            <span
+                                v-if="topic.questions_count"
+                                class="text-sm text-gray-500">
+                                {{ topic.questions_count }} questions
+                            </span>
                         </div>
-                        <span
-                            v-if="topic.questions_count"
-                            class="text-sm text-gray-500">
-                        {{ topic.questions_count }} questions
-                        </span>
+                        <div>
+                            <Icon :name="topic.icon" class="w-10 h-10 text-indigo-600"/>
+                        </div>
+
                     </div>
 
                     <p v-if="topic.description" class="text-sm text-gray-600 mb-4">

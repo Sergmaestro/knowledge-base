@@ -3,7 +3,7 @@
     <Layout :topics="topics">
         <div class="space-y-8">
             <!-- Hero Section -->
-            <div class="text-center py-8">
+            <div class="text-center py-4">
                 <h1 class="text-4xl font-bold text-gray-900 mb-4">Bookmarks</h1>
                 <p class="text-lg text-gray-600 max-w-2xl mx-auto">
                     Your saved questions for quick reference during interview preparation.

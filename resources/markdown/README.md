@@ -52,6 +52,9 @@ A comprehensive Q&A knowledge base for Senior Software Engineer interviews focus
 ### Behavioral
 - **[Questions](Behavioral/questions.md)** - STAR method examples, leadership scenarios, technical challenges, conflict resolution
 
+### Coding
+- **[Algorithms](Coding/algorithms.md)** - LeetCode approaches, patterns, and hints for problem-solving in PHP
+
 ---
 
 ## 🔍 How to Use This Knowledge Base

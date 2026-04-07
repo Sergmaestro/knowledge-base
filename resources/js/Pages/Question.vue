@@ -149,7 +149,7 @@
             </div>
 
             <!-- Navigation -->
-            <div class="flex justify-between mt-8 pt-6 border-t">
+            <div class="flex justify-between gap-2 mt-8 pt-6 border-t">
                 <Link
                     v-if="question.navigation.prev"
                     :href="`/question/${question.navigation.prev.slug}`"

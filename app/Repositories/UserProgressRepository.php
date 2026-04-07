@@ -9,7 +9,7 @@ class UserProgressRepository
 {
     private const int CACHE_TTL = 3600;
 
-    private const string CACHE_TAG = 'user_progress';
+    public const string CACHE_TAG = 'user_progress';
 
     /**
      * User progress by topic

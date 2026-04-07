@@ -2,7 +2,7 @@
     <div class="min-h-screen bg-gray-50">
         <!-- Header -->
         <header class="bg-white shadow-sm border-b border-gray-200">
-            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="max-w-[90rem] mx-auto px-4 sm:px-6 lg:px-8">
                 <div class="flex justify-between items-center h-16">
                     <div class="flex items-center space-x-4">
                         <Link href="/" class="flex items-center">
@@ -150,7 +150,7 @@
         </div>
 
         <!-- Main Content -->
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <div class="max-w-[90rem] mx-auto px-4 sm:px-6 lg:px-8 py-6">
             <div class="flex gap-6">
                 <!-- Sidebar -->
                 <Sidebar :topics="topics" :current-slug="currentTopicSlug"/>
