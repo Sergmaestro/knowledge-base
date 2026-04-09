@@ -184,7 +184,10 @@ The app uses Laravel Breeze for authentication. Users can:
 
 ## Search
 
-Search uses MySQL LIKE queries to find questions by title and content. Results include topic name and excerpt.
+Search uses Laravel's full-text search (MySQL FULLTEXT index) for fast, relevance-ranked results. 
+- Queries with 4+ characters use FULLTEXT search with relevance ranking
+- Short queries (< 4 chars) use LIKE for broader matching
+- Works with both MySQL and PostgreSQL via Laravel's `whereFullText()` query builder
 
 ## Development
 

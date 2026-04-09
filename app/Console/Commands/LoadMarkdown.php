@@ -30,16 +30,15 @@ class LoadMarkdown extends Command
         if ($this->option('fresh')) {
             $this->info('Clearing existing data...');
             DB::connection()->getPdo()->exec('SET FOREIGN_KEY_CHECKS=0');
-            DB::transaction(function () {
-                Question::truncate();
-                Topic::truncate();
 
-                // Reset all user-related data as it might be referenced to the wrong question
-                AnswerNote::truncate();
-                Bookmark::truncate();
-                UserProgress::truncate();
-                Cache::tags([UserProgressRepository::CACHE_TAG])->flush();
-            });
+            Question::truncate();
+            Topic::truncate();
+
+            // Reset all user-related data as it might be referenced to the wrong question
+            AnswerNote::truncate();
+            Bookmark::truncate();
+            UserProgress::truncate();
+            Cache::tags([UserProgressRepository::CACHE_TAG])->flush();
 
             DB::connection()->getPdo()->exec('SET FOREIGN_KEY_CHECKS=1');
         }

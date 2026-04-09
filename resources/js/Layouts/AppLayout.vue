@@ -187,7 +187,7 @@
                         </div>
                     </div>
 
-                    <div class="max-h-96 overflow-y-auto">
+                    <div class="max-h-96 overflow-y-auto rounded-b-lg">
                         <div v-if="searchResults.length > 0" class="divide-y">
                             <Link
                                 v-for="result in searchResults"
@@ -201,12 +201,15 @@
                                     <Tag v-if="result.tag" :label="result.tag"/>
                                 </div>
                                 <div class="text-sm text-gray-500 mt-1">{{ result.topic.name }}</div>
-                                <div class="text-sm text-gray-600 mt-1 line-clamp-2"
+                                <div class="text-sm text-gray-600 mt-1"
                                      v-html="highlightMatch(result.excerpt, searchQuery)"></div>
                             </Link>
                         </div>
-                        <div v-else-if="searchQuery.length >= 2" class="p-8 text-center text-gray-500">
-                            No results found for "{{ searchQuery }}"
+                        <div v-else-if="searchQuery.length >= 2" class="p-8 text-center text-gray-400">
+                            {{ isSearching ? 'Searching...' : (hasSearched ? 'No results found' : 'Type to search...') }}
+                        </div>
+                        <div v-else class="p-8 text-center text-gray-400">
+                            Type to search...
                         </div>
                     </div>
                 </div>
@@ -239,6 +242,8 @@ const showSearch = ref(false)
 const showMobileMenu = ref(false)
 const searchQuery = ref('')
 const searchResults = ref([])
+const isSearching = ref(false)
+const hasSearched = ref(false)
 const searchInput = ref(null)
 
 const isActive = (slug) => {
@@ -261,21 +266,29 @@ function debounce(fn, delay) {
 
 const performSearch = debounce((query) => {
     if (query.length >= 2) {
+        searchResults.value = []
+        isSearching.value = true
+        hasSearched.value = true
         axios.get(route('search', {q: query}))
             .then(({data}) => searchResults.value = data.results || [])
             .catch(() => window.dispatchEvent(new CustomEvent('show-toast', {detail: {message: 'Search failed'}})))
+            .finally(() => isSearching.value = false)
     } else {
         searchResults.value = []
+        hasSearched.value = false
     }
 }, 400)
 
 watch(showSearch, async (value) => {
     if (value) {
+        document.body.style.overflow = 'hidden'
         await nextTick()
         searchInput.value?.focus()
     } else {
+        document.body.style.overflow = ''
         searchQuery.value = ''
         searchResults.value = []
+        hasSearched.value = false
     }
 })
 

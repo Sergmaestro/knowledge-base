@@ -21,14 +21,30 @@ readonly class SearchService
         $questions = $this->questionRepository->search($query);
 
         return $questions->load(['topic:id,name,slug'])
-            ->map(function ($question) use ($query) {
-                $excerpt = $this->getExcerpt($question->content, $query);
-
-                return SearchResultDTO::fromQuestion($question, $excerpt);
-            });
+            ->map(fn($question) => SearchResultDTO::fromQuestion(
+                $question,
+                $this->getExcerpt($question->content, $query)
+            ));
     }
 
-    private function getExcerpt(string $content, string $query, int $length = 200): string
+    private function getExcerpt(
+        string $content,
+        string $query,
+        int $length = 200
+    ): string
+    {
+        $stripped = $this->stripContent($content);
+        $matchPos = $this->findMatchPosition($stripped, $query);
+
+        if ($matchPos !== false) {
+            return $this->extractAroundMatch($stripped, $matchPos, $length);
+        }
+
+        return $this->extractFromOriginal($content, $query, $length)
+            ?? $this->getDefaultExcerpt($stripped, $length);
+    }
+
+    private function stripContent(string $content): string
     {
         $content = strip_tags($content);
         $content = preg_replace('/\s+/', ' ', $content);
@@ -38,39 +54,89 @@ readonly class SearchService
             $content = mb_convert_encoding($content, 'UTF-8', 'ISO-8859-1');
         }
 
-        // Case-insensitive search for the query in content
-        $queryLower = mb_strtolower($query);
-        $contentLower = mb_strtolower($content);
-        $matchPos = mb_stripos($contentLower, $queryLower);
+        return $content;
+    }
 
-        // No match found - return default excerpt from the beginning
+    private function findMatchPosition(string $content, string $query): int|false
+    {
+        return mb_stripos(mb_strtolower($content), mb_strtolower($query));
+    }
+
+    private function extractFromOriginal(
+        string $originalContent,
+        string $query,
+        int $length
+    ): ?string
+    {
+        $matchPos = $this->findMatchPosition($originalContent, $query);
         if ($matchPos === false) {
-            if (mb_strlen($content) <= $length) {
-                return $content;
-            }
-
-            return mb_substr($content, 0, $length) . '...';
+            return null;
         }
 
-        // Match found - center excerpt around the match position
-        // Calculate start position: go back half the length from match
+        $excerpt = $this->extractAroundPosition($originalContent, $matchPos, $length);
+        $excerpt = $this->stripContent($excerpt);
+        $originalLength = mb_strlen($originalContent);
+
+        return $this->addEllipsis(
+            $excerpt,
+            $matchPos > 0,
+            $matchPos + mb_strlen($query) < $originalLength
+        );
+    }
+
+    private function getDefaultExcerpt(string $content, int $length): string
+    {
+        if (mb_strlen($content) <= $length) {
+            return $content;
+        }
+
+        return mb_substr($content, 0, $length) . '...';
+    }
+
+    private function extractAroundMatch(
+        string $content,
+        int $matchPos,
+        int $length
+    ): string
+    {
+        $excerpt = $this->extractAroundPosition($content, $matchPos, $length);
+        $contentLength = mb_strlen($content);
+
+        return $this->addEllipsis(
+            $excerpt,
+            $matchPos > 0,
+            $matchPos < $contentLength
+        );
+    }
+
+    private function extractAroundPosition(
+        string $content,
+        int $matchPos,
+        int $length
+    ): string
+    {
+        $contentLength = mb_strlen($content);
         $start = max(0, $matchPos - (int)($length / 2));
+        $end = min($contentLength, $start + $length);
 
-        // Calculate end position: start + desired length
-        $end = min(mb_strlen($content), $start + $length);
-
-        // If end hit the content boundary, shift start back to keep full length
         if ($end - $start < $length) {
             $start = max(0, $end - $length);
         }
 
-        $excerpt = mb_substr($content, $start, $end - $start);
+        return mb_substr($content, $start, $end - $start);
+    }
 
-        if ($start > 0) {
+    private function addEllipsis(
+        string $excerpt,
+        bool $prefix = false,
+        bool $suffix = false
+    ): string
+    {
+        if ($prefix) {
             $excerpt = "...$excerpt";
         }
 
-        if ($end < mb_strlen($content)) {
+        if ($suffix) {
             $excerpt = "$excerpt...";
         }
 

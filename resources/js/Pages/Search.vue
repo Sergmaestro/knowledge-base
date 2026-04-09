@@ -22,7 +22,7 @@
                             <span class="text-sm text-indigo-600">{{ result.topic.name }}</span>
                         </div>
                     </div>
-                    <p class="text-gray-600 mt-2 line-clamp-2">{{ result.excerpt }}</p>
+                    <p class="text-gray-600 mt-2">{{ result.excerpt }}</p>
                 </Link>
             </div>
 

@@ -66,9 +66,6 @@ class MarkdownLoader
         $this->topicRepository->upsert($topicData);
         $this->persistQuestions($questionData);
 
-        // Sync all questions to Scout search index
-        Question::query()->searchable();
-
         $stats = [
             'topics' => count($topicData),
             'questions' => count($questionData)
