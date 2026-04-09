@@ -24,7 +24,8 @@
                         </div>
                         <button
                             @click.prevent="removeBookmark(bookmark.id)"
-                            class="p-2 text-gray-400 hover:text-red-500 transition"
+                            :disabled="isRemoving"
+                            class="p-2 text-gray-400 hover:text-red-500 transition disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -50,6 +51,7 @@
 <script setup>
 import Layout from '@/Layouts/AppLayout.vue'
 import {Head, Link, router} from '@inertiajs/vue3'
+import {ref} from 'vue'
 
 const props = defineProps({
     bookmarks: {
@@ -62,9 +64,14 @@ const props = defineProps({
     },
 })
 
+const isRemoving = ref(false)
+
 const removeBookmark = (questionId) => {
-    axios.post('/bookmarks/toggle', {question_id: questionId})
+    if (isRemoving.value) return
+    isRemoving.value = true
+    axios.post(route('bookmarks.toggle'), {question_id: questionId})
         .then(() => router.reload())
         .catch(() => window.dispatchEvent(new CustomEvent('show-toast', { detail: { message: 'Failed to toggle bookmark' } })))
+        .finally(() => isRemoving.value = false)
 }
 </script>

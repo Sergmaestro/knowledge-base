@@ -3,6 +3,7 @@
 namespace App\Repositories;
 
 use App\Models\UserProgress;
+use DB;
 use Illuminate\Support\Facades\Cache;
 
 class UserProgressRepository
@@ -61,36 +62,37 @@ class UserProgressRepository
 
     public function toggle(int $questionId, int $userId): bool
     {
-        $this->invalidateCache($userId);
+        return DB::transaction(function () use ($questionId, $userId) {
+            $wasCompleted = UserProgress::whereUserId($userId)
+                ->where('question_id', $questionId)
+                ->lockForUpdate()
+                ->value('completed') ?? false;
 
-        $progress = UserProgress::whereUserId($userId)
-            ->where('question_id', $questionId)
-            ->first();
+            $isCompleted = !$wasCompleted;
 
-        if ($progress) {
-            $isCompleted = !$progress->completed;
-            $progress->update([
-                'completed' => $isCompleted,
-                'completed_at' => $isCompleted ? now() : null,
-            ]);
+            UserProgress::upsert(
+                [
+                    'user_id' => $userId,
+                    'question_id' => $questionId,
+                    'completed' => $isCompleted,
+                    'completed_at' => $isCompleted ? now() : null,
+                ],
+                uniqueBy: ['user_id', 'question_id'],
+                update: ['completed', 'completed_at']
+            );
+
+            $this->invalidateCache($userId);
 
             return $isCompleted;
-        }
-
-        UserProgress::create([
-            'user_id' => $userId,
-            'question_id' => $questionId,
-            'completed' => true,
-            'completed_at' => now(),
-        ]);
-
-        return true;
+        });
     }
 
     public function reset(int $userId): void
     {
-        $this->invalidateCache($userId);
-        UserProgress::whereUserId($userId)->delete();
+        DB::transaction(function () use ($userId) {
+            UserProgress::whereUserId($userId)->delete();
+            $this->invalidateCache($userId);
+        });
     }
 
     private function invalidateCache(int $userId): void

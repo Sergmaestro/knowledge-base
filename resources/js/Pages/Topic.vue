@@ -43,7 +43,8 @@
                             <button
                                 v-if="$page.props.auth?.user"
                                 @click.prevent="toggleProgress(question.id)"
-                                class="flex-shrink-0"
+                                :disabled="isTogglingProgress === question.id"
+                                class="flex-shrink-0 disabled:opacity-50"
                             >
                                 <svg
                                     v-if="question.is_completed"
@@ -89,7 +90,7 @@
 <script setup>
 import Layout from '@/Layouts/AppLayout.vue'
 import {Head, Link, router} from '@inertiajs/vue3'
-import {computed} from 'vue'
+import {computed, ref} from 'vue'
 import Tag from '@/Components/Tag.vue'
 
 const props = defineProps({
@@ -104,9 +105,14 @@ const allTopics = computed(() => {
     return props.topics || []
 })
 
+const isTogglingProgress = ref(null)
+
 const toggleProgress = (questionId) => {
-    axios.post('/progress/toggle', {question_id: questionId})
+    if (isTogglingProgress.value) return
+    isTogglingProgress.value = questionId
+    axios.post(route('progress.toggle'), {question_id: questionId})
         .then(() => router.reload())
         .catch(() => window.dispatchEvent(new CustomEvent('show-toast', { detail: { message: 'Failed to toggle progress' } })))
+        .finally(() => isTogglingProgress.value = null)
 }
 </script>

@@ -1,7 +1,8 @@
 <template>
     <button
         @click="$emit('toggle')"
-        class="flex items-center px-3 py-1.5 text-sm font-medium rounded-md transition"
+        :disabled="loading"
+        class="min-w-32 flex justify-center items-center px-3 py-1.5 text-sm font-medium rounded-md transition disabled:opacity-50"
         :class="is_completed
               ? 'bg-green-100 text-green-700 hover:bg-green-200'
               : 'bg-gray-100 text-gray-600 hover:bg-gray-200'">
@@ -22,6 +23,10 @@
 <script setup>
 defineProps({
     is_completed: {
+        type: Boolean,
+        default: false,
+    },
+    loading: {
         type: Boolean,
         default: false,
     },

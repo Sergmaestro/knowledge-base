@@ -40,12 +40,14 @@
                     <!-- Bookmark Button -->
                     <BookmarkButton
                         :is_bookmarked="question.is_bookmarked"
+                        :loading="isTogglingBookmark"
                         @toggle="toggleBookmark"
                     />
 
                     <!-- Completion Toggle -->
                     <CompleteButton
                         :is_completed="question.is_completed"
+                        :loading="isTogglingProgress"
                         @toggle="toggleProgress"
                     />
                 </div>
@@ -64,10 +66,12 @@
                 <div class="flex items-center space-x-2">
                     <BookmarkButton
                         :is_bookmarked="question.is_bookmarked"
+                        :loading="isTogglingBookmark"
                         @toggle="toggleBookmark"/>
 
                     <CompleteButton
                         :is_completed="question.is_completed"
+                        :loading="isTogglingProgress"
                         @toggle="toggleProgress"/>
                 </div>
             </div>
@@ -92,8 +96,12 @@
                             <div class="flex space-x-2">
                                 <button
                                     @click="updateNote(note.id)"
-                                    class="px-3 py-1 text-sm bg-indigo-600 text-white rounded hover:bg-indigo-700"
+                                    :disabled="isUpdatingNote"
+                                    class="flex items-center px-3 py-1 text-sm bg-indigo-600 text-white rounded hover:bg-indigo-700 disabled:opacity-50"
                                 >
+                                    <svg v-if="isUpdatingNote" class="w-4 h-4 mr-1.5 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+                                    </svg>
                                     Save
                                 </button>
                                 <button
@@ -139,9 +147,12 @@
                     <div class="mt-2 flex justify-end">
                         <button
                             @click="addNote"
-                            :disabled="!newNote.trim()"
-                            class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                            :disabled="!newNote.trim() || isAddingNote"
+                            class="flex items-center px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
+                            <svg v-if="isAddingNote" class="w-4 h-4 mr-2 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+                            </svg>
                             Add Note
                         </button>
                     </div>
@@ -210,26 +221,39 @@ const editNoteText = ref('')
 const showDeleteConfirm = ref(false)
 const noteToDelete = ref(null)
 
+const isTogglingProgress = ref(false)
+const isTogglingBookmark = ref(false)
+const isAddingNote = ref(false)
+const isUpdatingNote = ref(false)
+const isDeletingNote = ref(false)
+
 const renderedContent = computed(() => {
     return marked(props.question.content || '')
 })
 
 const toggleProgress = () => {
-    axios.post('/progress/toggle', {question_id: props.question.id})
+    if (isTogglingProgress.value) return
+    isTogglingProgress.value = true
+    axios.post(route('progress.toggle'), {question_id: props.question.id})
         .then(() => router.reload())
         .catch(() => window.dispatchEvent(new CustomEvent('show-toast', {detail: {message: 'Failed to toggle progress'}})))
+        .finally(() => isTogglingProgress.value = false)
 }
 
 const toggleBookmark = () => {
-    axios.post('/bookmarks/toggle', {question_id: props.question.id})
+    if (isTogglingBookmark.value) return
+    isTogglingBookmark.value = true
+    axios.post(route('bookmarks.toggle'), {question_id: props.question.id})
         .then(() => router.reload())
         .catch(() => window.dispatchEvent(new CustomEvent('show-toast', {detail: {message: 'Failed to toggle bookmark'}})))
+        .finally(() => isTogglingBookmark.value = false)
 }
 
 const addNote = () => {
-    if (!newNote.value.trim()) return
+    if (!newNote.value.trim() || isAddingNote.value) return
+    isAddingNote.value = true
 
-    axios.post('/notes', {
+    axios.post(route('notes.store'), {
         question_id: props.question.id,
         note: newNote.value,
     })
@@ -238,6 +262,7 @@ const addNote = () => {
             router.reload()
         })
         .catch(() => window.dispatchEvent(new CustomEvent('show-toast', {detail: {message: 'Failed to add note'}})))
+        .finally(() => isAddingNote.value = false)
 }
 
 const startEdit = (note) => {
@@ -251,9 +276,10 @@ const cancelEdit = () => {
 }
 
 const updateNote = (noteId) => {
-    if (!editNoteText.value.trim()) return
+    if (!editNoteText.value.trim() || isUpdatingNote.value) return
+    isUpdatingNote.value = true
 
-    axios.patch(`/notes/${noteId}`, {
+    axios.patch(route('notes.update', noteId), {
         note: editNoteText.value,
     })
         .then(() => {
@@ -261,6 +287,7 @@ const updateNote = (noteId) => {
             router.reload()
         })
         .catch(() => window.dispatchEvent(new CustomEvent('show-toast', {detail: {message: 'Failed to update note'}})))
+        .finally(() => isUpdatingNote.value = false)
 }
 
 const confirmDeleteNote = (noteId) => {
@@ -269,13 +296,17 @@ const confirmDeleteNote = (noteId) => {
 }
 
 const deleteNote = () => {
-    if (!noteToDelete.value) return
+    if (!noteToDelete.value || isDeletingNote.value) return
+    isDeletingNote.value = true
 
-    axios.delete(`/notes/${noteToDelete.value}`)
+    axios.delete(route('notes.destroy'), noteToDelete.value)
         .then(() => router.reload())
         .catch(() => window.dispatchEvent(new CustomEvent('show-toast', {detail: {message: 'Failed to delete note'}})))
-    showDeleteConfirm.value = false
-    noteToDelete.value = null
+        .finally(() => {
+            isDeletingNote.value = false
+            showDeleteConfirm.value = false
+            noteToDelete.value = null
+        })
 }
 
 const formatDate = (dateString) => {

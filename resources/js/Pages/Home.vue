@@ -15,8 +15,9 @@
                     <h2 class="text-lg font-medium text-gray-900">Your Progress</h2>
                     <button
                         @click="showResetDialog = true"
-                        class="text-sm text-red-600 hover:text-red-800">
-                        Reset progress
+                        :disabled="isResetting"
+                        class="text-sm text-red-600 hover:text-red-800 disabled:opacity-50">
+                        {{ isResetting ? 'Resetting...' : 'Reset progress' }}
                     </button>
                 </div>
                 <div class="w-full bg-gray-200 rounded-full h-4">
@@ -113,14 +114,17 @@ const props = defineProps({
 })
 
 const showResetDialog = ref(false)
+const isResetting = ref(false)
+
 const resetProgress = () => {
-    axios.post('/progress/reset')
-        .then(() => {
-            router.reload()
-        })
+    if (isResetting.value) return
+    isResetting.value = true
+    axios.post(route('progress.reset'))
+        .then(() => router.reload())
         .catch(() => window.dispatchEvent(
             new CustomEvent('show-toast', {detail: {message: 'Failed to reset progress'}})
         ))
+        .finally(() => isResetting.value = false)
 }
 
 const overallProgress = computed(() => {

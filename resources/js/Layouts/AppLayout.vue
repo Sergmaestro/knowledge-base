@@ -219,7 +219,7 @@
 
 <script setup>
 import {ref, watch, nextTick} from 'vue'
-import {Link} from '@inertiajs/vue3'
+import {Link, router} from '@inertiajs/vue3'
 import Sidebar from '@/Components/Sidebar.vue'
 import Toast from '@/Components/Toast.vue'
 import Tag from '@/Components/Tag.vue'
@@ -261,7 +261,7 @@ function debounce(fn, delay) {
 
 const performSearch = debounce((query) => {
     if (query.length >= 2) {
-        axios.get(`/search?q=${encodeURIComponent(query)}`)
+        axios.get(route('search', {q: query}))
             .then(({data}) => searchResults.value = data.results || [])
             .catch(() => window.dispatchEvent(new CustomEvent('show-toast', {detail: {message: 'Search failed'}})))
     } else {
@@ -285,7 +285,7 @@ watch(searchQuery, (query) => {
 
 const handleSearch = () => {
     if (searchResults.value.length > 0) {
-        window.location.href = `/question/${searchResults.value[0].slug}`
+        router.visit(route('question.show', searchResults.value[0].slug))
     }
 }
 </script>

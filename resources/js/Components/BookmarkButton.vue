@@ -2,7 +2,8 @@
     <button
         v-if="$page.props.auth?.user"
         @click="$emit('toggle')"
-        class="p-2 text-gray-400 hover:text-gray-600 transition"
+        :disabled="loading"
+        class="p-2 text-gray-400 hover:text-gray-600 transition disabled:opacity-50 disabled:cursor-not-allowed"
     >
         <svg
             v-if="is_bookmarked"
@@ -22,6 +23,10 @@
 <script setup>
 defineProps({
     is_bookmarked: {
+        type: Boolean,
+        default: false,
+    },
+    loading: {
         type: Boolean,
         default: false,
     },
