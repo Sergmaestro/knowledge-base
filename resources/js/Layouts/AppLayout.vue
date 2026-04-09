@@ -25,8 +25,8 @@
                         <!-- Search Button -->
                         <button
                             @click="showSearch = true"
-                            class="flex items-center px-3 py-1.5 text-sm text-gray-500 bg-gray-100 rounded-lg hover:bg-gray-200 transition"
-                        >
+                            class="flex items-center px-3 py-1.5 text-sm w-40 text-gray-500 bg-gray-100
+                                   rounded-lg hover:bg-gray-200 transition">
                             <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                       d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
@@ -41,7 +41,7 @@
                                 Bookmarks
                             </Link>
                             <Link :href="route('profile.edit')"
-                                  class="hidden lg:inline-block text-sm text-gray-600 hover:text-gray-900">
+                                  class="hidden lg:inline-block text-sm text-gray-600 hover:text-gray-900 max-w-64 overflow-hidden whitespace-nowrap overflow-ellipsis">
                                 {{ $page.props.auth.user.name }}
                             </Link>
                             <Link href="/logout" method="post" as="button"

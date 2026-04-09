@@ -113,7 +113,9 @@
                             </div>
                         </div>
                         <div v-else>
-                            <p class="text-gray-700 whitespace-pre-wrap">{{ note.note }}</p>
+                            <p class="text-gray-700 whitespace-pre-wrap overflow-hidden overflow-x-auto">
+                                {{ note.note }}
+                            </p>
                             <div class="flex items-center justify-between mt-2 text-sm text-gray-500">
                                 <span>{{ formatDate(note.created_at) }}</span>
                                 <div class="flex space-x-2">
