@@ -102,7 +102,7 @@
 <script setup>
 import Layout from '@/Layouts/AppLayout.vue'
 import {computed, ref} from 'vue'
-import {Link, router, useForm} from "@inertiajs/vue3";
+import {Link, router} from "@inertiajs/vue3";
 import Icon from '@/Components/Icon.vue';
 import ConfirmDialog from '@/Components/ConfirmDialog.vue';
 
