@@ -1096,6 +1096,577 @@ class MigrationMonitor {
 
 ---
 
+---
+
+## Question 5: Explain database locking mechanisms (row-level vs table-level) and the use of cursors.
+
+**Answer:**
+
+### Lock Granularity
+
+Databases use locks to manage concurrent access. The granularity determines how much data is locked.
+
+```
+Lock Granularity Pyramid:
+
+          ┌─────────┐
+          │Database │  ← Coarsest (entire DB locked)
+          ├─────────┤
+          │  Table  │  ← Table-level (entire table)
+          ├─────────┤
+          │  Page   │  ← Page-level (data page, ~16KB)
+          ├─────────┤
+          │  Row    │  ← Finest (single row)
+          └─────────┘
+```
+
+| Granularity | Concurrency | Overhead | Use Case |
+|-------------|-------------|----------|----------|
+| Table | Lowest | Lowest | DDL operations (ALTER TABLE), bulk operations |
+| Page | Medium | Medium | Some DBMS default (MySQL MyISAM) |
+| Row | Highest | Highest | OLTP, concurrent updates to different rows |
+
+### Row-Level Locking
+
+Most granular — allows maximum concurrency. Default in InnoDB (MySQL) and PostgreSQL.
+
+```sql
+-- MySQL/PostgreSQL: Row-level locks via FOR UPDATE
+START TRANSACTION;
+
+-- Exclusive row lock — other transactions cannot read/write this row
+SELECT * FROM products WHERE id = 1 FOR UPDATE;
+
+-- Shared row lock — others can read but not write
+SELECT * FROM products WHERE id = 1 FOR SHARE;
+-- MySQL: LOCK IN SHARE MODE (deprecated)
+-- PostgreSQL: FOR SHARE
+
+UPDATE products SET stock = stock - 1 WHERE id = 1;
+
+COMMIT; -- Lock released
+```
+
+**Row lock types:**
+
+| Lock Type | Symbol | Behavior | Who Can Read | Who Can Write |
+|-----------|--------|----------|-------------|---------------|
+| Shared (S) | Read lock | Multiple transactions can read | ✅ Everyone | ❌ No one |
+| Exclusive (X) | Write lock | Only one transaction can modify | ✅ Only if SELECT ... FOR UPDATE | ❌ Only lock holder |
+| Intention Shared (IS) | Table-level | Intends to lock rows with S locks | ✅ | ✅ (if not conflicting) |
+| Intention Exclusive (IX) | Table-level | Intends to lock rows with X locks | ✅ | ✅ (if not conflicting) |
+
+**Intention locks** — table-level flags that indicate a transaction intends to lock rows. They prevent conflicting DDL operations without scanning every row.
+
+```
+Transaction A: LOCK row 1 with X lock
+  → Sets IX lock on the table
+  → Sets X lock on row 1
+
+Transaction B: ALTER TABLE users ... (needs table-level X lock)
+  → Checks for IX lock at table level
+  → Waits because IX conflicts with X at table level
+  → Doesn't need to scan all rows
+```
+
+```sql
+-- MySQL: View current row locks
+SELECT * FROM performance_schema.data_locks\G
+
+-- PostgreSQL: View current locks
+SELECT
+    locktype,
+    relation::regclass AS table_name,
+    mode,
+    granted,
+    pid
+FROM pg_locks
+WHERE NOT granted;  -- Waiting locks
+```
+
+### Table-Level Locking
+
+Locks the entire table — low concurrency but low overhead.
+
+```sql
+-- MySQL: Explicit table lock
+LOCK TABLES products WRITE;  -- Exclusive — only this session
+-- Other sessions wait for this table
+
+UPDATE products SET stock = 0 WHERE id = 1;
+-- Any row, any operation — all wait
+
+UNLOCK TABLES;
+
+-- MySQL: READ lock (shared)
+LOCK TABLES products READ;
+-- All sessions can read, none can write
+UNLOCK TABLES;
+```
+
+**When table locks occur implicitly:**
+
+```sql
+-- 1. DDL operations (MySQL)
+ALTER TABLE products ADD COLUMN discount DECIMAL(5,2);
+-- Full table lock during schema change
+
+-- 2. No index on WHERE clause (MySQL InnoDB)
+START TRANSACTION;
+SELECT * FROM products WHERE description LIKE '%keyword%' FOR UPDATE;
+-- No index on `description` → MySQL locks ALL rows → effectively table lock
+-- Even rows that don't match are locked (gap lock + row lock)
+
+-- 3. Bulk UPDATE/DELETE
+UPDATE products SET status = 'archived' WHERE 1=1;
+-- Table-level lock or many row locks depending on DBMS
+```
+
+### Lock Escalation
+
+Some databases promote row locks to table locks when too many rows are locked (to reduce overhead).
+
+```
+SQL Server lock escalation:
+  5,000+ row locks on one table in one transaction
+  → Escalates to table lock
+  → Frees memory, but blocks everyone
+
+MySQL InnoDB:
+  No lock escalation — uses row locks
+  But: no index → row locks on all rows → looks like table lock
+
+PostgreSQL:
+  No lock escalation — uses row locks
+  Each row lock stored in RAM (can hit overflow)
+```
+
+```sql
+-- PostgreSQL: Prevent row lock overflow
+-- Set max locks per transaction
+SET max_locks_per_transaction = 64;  -- Default: 64
+
+-- If too many row locks:
+-- ERROR: out of shared memory
+-- Hint: You might need to increase max_locks_per_transaction
+```
+
+### Gap Locks (MySQL InnoDB)
+
+InnoDB locks gaps between index records to prevent phantom reads in REPEATABLE READ.
+
+```
+Index:  10  20  30  40  50
+        │   │   │   │   │
+Gaps:  ─┘   └───┘   └───┘   └──
+
+SELECT * FROM products WHERE price BETWEEN 20 AND 40 FOR UPDATE;
+Locks:
+  - Row 20 (X lock)
+  - Row 30 (X lock)
+  - Row 40 (X lock)
+  - Gap (20-30) — prevents INSERT with price=25
+  - Gap (30-40) — prevents INSERT with price=35
+  - Gap (10-20) — prevents INSERT with price=15
+  - Gap (40-50) — prevents INSERT with price=45
+```
+
+```sql
+-- Phantom read prevented by gap locks
+-- Transaction A:
+START TRANSACTION;
+SELECT * FROM products WHERE price BETWEEN 20 AND 40 FOR UPDATE;
+-- Returns: 20, 30, 40
+
+-- Transaction B (tries to insert):
+INSERT INTO products (name, price) VALUES ('New', 25);
+-- BLOCKED — gap lock on (20-30)
+
+-- Transaction A commits → Transaction B proceeds
+```
+
+**MySQL: Disable gap locks** (switch to READ COMMITTED):
+
+```sql
+SET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED;
+-- No gap locks, but may get phantom reads
+-- Also: statement-based replication may break
+```
+
+### Deadlocks in Practice
+
+```sql
+-- Classic deadlock with row locks
+-- Transaction A:
+BEGIN;
+UPDATE accounts SET balance = balance - 100 WHERE id = 1;  -- Locks row 1
+UPDATE accounts SET balance = balance + 100 WHERE id = 2;  -- Waits for row 2
+
+-- Transaction B (concurrent):
+BEGIN;
+UPDATE accounts SET balance = balance - 50 WHERE id = 2;    -- Locks row 2
+UPDATE accounts SET balance = balance + 50 WHERE id = 1;    -- Waits for row 1
+
+-- Deadlock! DBMS kills one transaction
+-- ERROR: Deadlock found when trying to get lock; try restarting transaction
+```
+
+**Prevention strategies:**
+
+```php
+// 1. Consistent lock order — always lock resources in the same sequence
+class TransferService {
+    public function transfer(int $fromId, int $toId, float $amount): void
+    {
+        // Lock in consistent order (by ID, ascending)
+        $ids = [$fromId, $toId];
+        sort($ids);
+
+        DB::transaction(function () use ($ids, $amount) {
+            $from = DB::table('accounts')
+                ->where('id', $ids[0])
+                ->lockForUpdate()
+                ->first();
+
+            $to = DB::table('accounts')
+                ->where('id', $ids[1])
+                ->lockForUpdate()
+                ->first();
+
+            // Perform transfer
+            DB::table('accounts')
+                ->where('id', $from->id)
+                ->decrement('balance', $amount);
+
+            DB::table('accounts')
+                ->where('id', $to->id)
+                ->increment('balance', $amount);
+        });
+    }
+}
+
+// 2. Keep transactions short
+// ❌ Bad: Long transaction with external calls
+DB::transaction(function () {
+    $order = Order::lockForUpdate()->find(1);
+    $this->chargePaymentGateway($order); // HTTP call — takes seconds!
+    $order->update(['status' => 'paid']);
+});
+
+// ✅ Good: Lock only what you need, release quickly
+$order = Order::find(1);
+$this->chargePaymentGateway($order); // External call outside transaction
+
+DB::transaction(function () use ($order) {
+    $order = Order::lockForUpdate()->find($order->id);
+    // Quick DB operation
+    $order->update(['status' => 'paid']);
+});
+
+// 3. Retry on deadlock (Laravel)
+DB::transaction(function () {
+    // Your queries
+}, 5); // 5 retry attempts
+```
+
+### Cursors
+
+Cursors allow row-by-row processing of query results. They're useful for batch operations but should be used carefully.
+
+#### Explicit Cursors
+
+```sql
+-- PostgreSQL: Explicit cursor
+BEGIN;
+
+DECLARE product_cursor CURSOR FOR
+    SELECT id, name, price, stock
+    FROM products
+    WHERE category_id = 10
+    ORDER BY id;
+
+-- Fetch next row
+FETCH NEXT FROM product_cursor;
+-- Returns: id=101, name='Widget', price=9.99, stock=50
+
+-- Fetch 10 rows
+FETCH 10 FROM product_cursor;
+
+-- Fetch all remaining
+FETCH ALL FROM product_cursor;
+
+-- Move without fetching
+MOVE NEXT FROM product_cursor;
+MOVE 5 FROM product_cursor;
+
+-- Close cursor
+CLOSE product_cursor;
+
+COMMIT;
+
+-- Scrollable cursor (can move backwards)
+DECLARE scroll_cursor SCROLL CURSOR FOR
+    SELECT * FROM products ORDER BY id;
+
+FETCH NEXT FROM scroll_cursor;   -- Row 1
+FETCH NEXT FROM scroll_cursor;   -- Row 2
+FETCH PRIOR FROM scroll_cursor;  -- Back to Row 1
+FETCH LAST FROM scroll_cursor;   -- Last row
+FETCH FIRST FROM scroll_cursor;  -- First row
+
+-- Cursor with hold (survives transaction)
+DECLARE hold_cursor CURSOR WITH HOLD FOR
+    SELECT * FROM large_table;
+
+COMMIT; -- Cursor stays open
+FETCH FROM hold_cursor; -- Still works
+CLOSE hold_cursor;
+```
+
+```sql
+-- MySQL: Stored procedure with cursor
+DELIMITER //
+
+CREATE PROCEDURE process_expired_orders()
+BEGIN
+    DECLARE done INT DEFAULT FALSE;
+    DECLARE v_order_id INT;
+    DECLARE v_total DECIMAL(10,2);
+
+    -- Declare cursor
+    DECLARE order_cursor CURSOR FOR
+        SELECT id, total
+        FROM orders
+        WHERE status = 'pending'
+          AND created_at < NOW() - INTERVAL 7 DAY;
+
+    -- Handler for when cursor has no more rows
+    DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = TRUE;
+
+    OPEN order_cursor;
+
+    read_loop: LOOP
+        FETCH order_cursor INTO v_order_id, v_total;
+
+        IF done THEN
+            LEAVE read_loop;
+        END IF;
+
+        -- Process each row
+        UPDATE orders
+        SET status = 'cancelled',
+            cancelled_at = NOW()
+        WHERE id = v_order_id;
+
+        INSERT INTO order_audit (order_id, action, total)
+        VALUES (v_order_id, 'auto_cancelled', v_total);
+    END LOOP;
+
+    CLOSE order_cursor;
+END //
+
+DELIMITER ;
+
+-- Execute
+CALL process_expired_orders();
+```
+
+#### Cursors in Application Code
+
+```php
+// PostgreSQL: Cursor in application code (Laravel)
+use Illuminate\Support\Facades\DB;
+
+class OrderProcessor {
+    public function processLargeBatch(): void
+    {
+        // PostgreSQL and MySQL both support streaming/cursors
+        // Method 1: Chunk (Laravel built-in — uses ORDER BY + LIMIT/OFFSET)
+        Order::where('status', 'pending')
+            ->chunk(1000, function ($orders) {
+                foreach ($orders as $order) {
+                    $this->processOrder($order);
+                }
+            });
+
+        // Method 2: Cursor (Laravel built-in — uses actual cursor when available)
+        foreach (Order::where('status', 'pending')->cursor() as $order) {
+            $this->processOrder($order);
+        }
+
+        // Method 3: Lazy collection (memory efficient)
+        Order::where('status', 'pending')
+            ->lazy(500)
+            ->each(function ($order) {
+                $this->processOrder($order);
+            });
+    }
+
+    private function processOrder(Order $order): void
+    {
+        DB::transaction(function () use ($order) {
+            $order->update(['status' => 'processing']);
+            // Process...
+        });
+    }
+}
+
+// Raw PostgreSQL cursor in PHP
+class PgCursorProcessor {
+    private PDO $pdo;
+
+    public function processBatch(int $batchSize = 1000): void
+    {
+        $this->pdo->beginTransaction();
+
+        // Declare cursor
+        $this->pdo->exec('DECLARE batch_cursor CURSOR FOR
+            SELECT id, data FROM large_table WHERE processed = false');
+
+        while (true) {
+            $stmt = $this->pdo->prepare('FETCH :limit FROM batch_cursor');
+            $stmt->bindValue(':limit', $batchSize, PDO::PARAM_INT);
+            $stmt->execute();
+
+            $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+            if (empty($rows)) {
+                break;
+            }
+
+            foreach ($rows as $row) {
+                $this->processRow($row);
+            }
+        }
+
+        $this->pdo->exec('CLOSE batch_cursor');
+        $this->pdo->commit();
+    }
+}
+```
+
+#### When to Use Cursors
+
+```
+✅ Good cursor use cases:
+  - Processing large datasets row-by-row (millions of rows)
+  - Batch jobs that transform data
+  - Generating reports with complex per-row logic
+  - Migration scripts with per-row transformations
+  - Memory-efficient pagination (instead of loading all into memory)
+
+❌ Bad cursor use cases:
+  - Simple aggregations (use SQL)
+  - Set-based operations that can be done in one UPDATE
+  - Real-time user-facing queries
+  - When a single SQL statement can do the job
+
+Performance comparison:
+  Set-based SQL:   UPDATE orders SET status = 'cancelled' WHERE ...  ✓
+  Cursor-based:    Process each row individually                     ✗ (10-100x slower)
+```
+
+```sql
+-- ❌ Bad: Cursor when set-based UPDATE works
+DECLARE bad_cursor CURSOR FOR
+    SELECT id FROM orders WHERE status = 'pending' AND created_at < '2024-01-01';
+
+-- This entire loop can be replaced with a single UPDATE
+FOR rec IN bad_cursor LOOP
+    UPDATE orders SET status = 'archived' WHERE id = rec.id;
+END LOOP;
+
+-- ✅ Good: Single SQL statement
+UPDATE orders SET status = 'archived'
+WHERE status = 'pending' AND created_at < '2024-01-01';
+```
+
+#### Cursor vs. Keyset Pagination
+
+```sql
+-- Cursor-based pagination (database cursor)
+BEGIN;
+DECLARE page_cursor CURSOR FOR
+    SELECT id, title, created_at
+    FROM posts
+    ORDER BY created_at DESC, id DESC;
+FETCH 20 FROM page_cursor;  -- Page 1
+FETCH 20 FROM page_cursor;  -- Page 2
+-- ...
+CLOSE page_cursor;
+COMMIT;
+
+-- Keyset pagination (application-level cursor — more scalable)
+SELECT id, title, created_at
+FROM posts
+WHERE (created_at, id) < ('2024-05-01 10:00:00', 12345)  -- Last seen values
+ORDER BY created_at DESC, id DESC
+LIMIT 20;
+
+-- Comparison:
+-- SQL cursor: Server-side state, can timeout, holds locks
+-- Keyset pagination: Stateless, works across requests, no locks held
+```
+
+### Lock Monitoring
+
+```sql
+-- MySQL: Current locks
+SELECT
+    OBJECT_SCHEMA,
+    OBJECT_NAME,
+    LOCK_TYPE,       -- RECORD, TABLE, etc.
+    LOCK_MODE,       -- X, S, IX, IS, etc.
+    LOCK_STATUS,     -- GRANTED, WAITING
+    ENGINE_TRANSACTION_ID
+FROM performance_schema.data_locks;
+
+-- MySQL: Blocked transactions
+SELECT
+    r.trx_id AS waiting_trx_id,
+    r.trx_mysql_thread_id AS waiting_thread,
+    b.trx_id AS blocking_trx_id,
+    b.trx_mysql_thread_id AS blocking_thread,
+    b.trx_query AS blocking_query
+FROM information_schema.INNODB_LOCK_WAITS w
+JOIN information_schema.INNODB_TRX r ON w.requesting_trx_id = r.trx_id
+JOIN information_schema.INNODB_TRX b ON w.blocking_trx_id = b.trx_id;
+
+-- PostgreSQL: Current locks
+SELECT
+    blocked.pid AS blocked_pid,
+    blocked.query AS blocked_query,
+    blocking.pid AS blocking_pid,
+    blocking.query AS blocking_query
+FROM pg_catalog.pg_locks blocked
+JOIN pg_catalog.pg_locks blocking ON blocked.pid != blocking.pid
+WHERE NOT blocked.granted;
+
+-- PostgreSQL: Blocked query timeout
+SET lock_timeout = '5s';  -- Wait max 5 seconds for a lock
+-- If lock not acquired in 5s → ERROR: canceling statement due to lock timeout
+```
+
+**Follow-up:**
+- How does MVCC (Multi-Version Concurrency Control) reduce the need for locks?
+- What is the difference between optimistic and pessimistic locking?
+- How do gap locks in MySQL differ from PostgreSQL's approach to preventing phantom reads?
+- When would you choose table-level locking over row-level locking?
+- What are the memory implications of thousands of row-level locks?
+
+**Key Points:**
+- Row-level: highest concurrency, most overhead (default in InnoDB, PostgreSQL)
+- Table-level: lowest concurrency, least overhead (DDL, bulk operations)
+- Intention locks prevent conflicts between row and table locks without scanning
+- No index on WHERE → MySQL locks all rows (effectively table lock)
+- Gap locks prevent phantom reads but reduce concurrency
+- Cursors enable row-by-row processing but are 10-100x slower than set-based SQL
+- Keyset pagination is usually better than server-side cursors for web apps
+- Always lock resources in consistent order to avoid deadlocks
+- Monitor and set timeouts for lock contention
+
+---
+
 ## Notes
 
 Add more questions covering:

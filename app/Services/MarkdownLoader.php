@@ -4,7 +4,6 @@ namespace App\Services;
 
 use App\Repositories\QuestionRepository;
 use App\Repositories\TopicRepository;
-use App\Models\Question;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
@@ -31,6 +30,7 @@ class MarkdownLoader
         'Database' => ['description' => 'Database design, optimization, and advanced queries', 'icon' => 'server'],
         'System-Design' => ['description' => 'System architecture, design patterns, and scalability', 'icon' => 'system-design'],
         'DevOps' => ['description' => 'DevOps practices, monitoring, and infrastructure', 'icon' => 'cloud'],
+        'Networking' => ['description' => 'HTTP protocols, web fundamentals, and network concepts', 'icon' => 'network'],
         'Behavioral' => ['description' => 'Behavioral interview questions and STAR method examples', 'icon' => 'chat-bubble-left-right'],
         'Coding' => ['description' => 'LeetCode approaches, algorithms, and problem-solving patterns', 'icon' => 'coding'],
     ];

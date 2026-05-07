@@ -43,6 +43,10 @@ A comprehensive Q&A knowledge base for Senior Software Engineer interviews focus
 - **[Monitoring](DevOps/monitoring.md)** - APM, logging, metrics, alerting, production debugging
 - **[Infrastructure](DevOps/infrastructure.md)** - Environment variables, secrets management, Docker, Kubernetes, IaC (Terraform, CloudFormation)
 
+### Networking
+- **[HTTP Protocols](Networking/http-protocols.md)** - HTTP/1.0, HTTP/1.1, HTTP/2, HTTP/3, caching, connection lifecycle, security, performance
+- **[Web Security](Networking/web-security.md)** - HttpOnly cookies, CSP, TLS, security headers, cookie attributes, defense in depth
+
 ### System Design
 - **[API Design](System-Design/api-design.md)** - REST API design, versioning, REST vs GraphQL, backward compatibility
 - **[Design Patterns](System-Design/design-patterns.md)** - OOP design patterns with Laravel examples (Singleton, Factory, Repository, Strategy, Observer, etc.)
